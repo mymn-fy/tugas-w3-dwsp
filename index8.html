@@ -8,9 +8,28 @@
     
     <style>
         /* (Kode CSS ini sama persis dengan sebelumnya, tidak ada yang diubah) */
-        body { font-family: 'Inter', sans-serif; background-color: #f4f7f6; color: #333; margin: 0; padding: 40px 20px; }
-        h1 { font-size: 28px; color: #2c3e50; text-align: center; border-bottom: 3px solid #48a39e; padding-bottom: 15px; margin-bottom: 10px; }
-        .deskripsi-sistem { text-align: center; font-size: 16px; color: #555; margin-bottom: 30px; }
+        body { 
+            font-family: 'Inter', sans-serif; 
+            color: #333; 
+            margin: 0; 
+            padding: 40px 20px; 
+            position: relative;
+        }
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-image: url('assets/perpus.jpeg');
+            background-size: cover;
+            background-position: center;
+            filter: blur(5px);
+            z-index: -1;
+        }
+        h1 { font-size: 28px; color: #ffffff; text-align: center; border-bottom: 3px solid #48a39e; padding-bottom: 15px; margin-bottom: 10px; text-shadow: 0 2px 10px rgba(0,0,0,0.4); }
+        .deskripsi-sistem { text-align: center; font-size: 16px; color: #ffffff; margin-bottom: 30px; text-shadow: 0 1px 8px rgba(0,0,0,0.35); }
         
         .wadah-pencarian { max-width: 1000px; margin: 0 auto 20px auto; display: flex; gap: 10px; }
         .input-pencarian { flex-grow: 1; padding: 12px 15px; border: 1px solid #ccc; border-radius: 6px; font-size: 16px; font-family: inherit; transition: border-color 0.3s; }
@@ -57,7 +76,7 @@
 
         @media screen and (max-width: 600px) {
             body { padding: 15px 10px; }
-            h1 { font-size: 24px; }
+            h1 { font-size: 30px; }
             th, td { padding: 8px 10px; font-size: 14px; }
             .wadah-pencarian { flex-direction: column; }
             .tombol-cari { width: 100%; }
@@ -334,13 +353,21 @@
 
         function deleteBook(id) {
             console.log('deleteBook called with id:', id, typeof id);
-            if (!confirm('Yakin ingin menghapus buku ini?')) return;
+            if (!confirm('Yakin ingin menghapus buku ini?')) {
+                console.log('Delete cancelled by user');
+                return;
+            }
+            console.log('Delete confirmed, proceeding...');
             const stored = loadFromStorage();
             console.log('stored before filter:', stored);
-            const filtered = stored.filter(b => b.id !== id);
+            const filtered = stored.filter(b => {
+                console.log('Checking book id:', b.id, typeof b.id, 'vs', id, typeof id, 'equal?', b.id === id);
+                return b.id !== id;
+            });
             console.log('filtered:', filtered);
             saveToStorage(filtered);
             markBookDeleted(id);
+            console.log('Book marked as deleted, refreshing table...');
             refreshTable();
         }
 
