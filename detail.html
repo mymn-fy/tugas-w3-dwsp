@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@100..900&display=swap" rel="stylesheet">
+    <title>Detail Buku - Guru Gembul Bicara Pendidikan</title>
+    
+    <style>
+        body { font-family: 'Inter', sans-serif; background-color: #f4f7f6; color: #333; margin: 0; padding: 40px 20px; }
+        h1 { font-size: 24px; color: #2c3e50; text-align: center; border-bottom: 3px solid #48a39e; padding-bottom: 15px; margin-bottom: 30px; }
+        .wadah-detail { max-width: 800px; margin: 0 auto; background-color: #ffffff; padding: 30px; border-radius: 8px; box-shadow: 0 4px 10px rgba(0,0,0,0.08); }
+        .cover-buku { text-align: center; margin-bottom: 20px; }
+        .cover-buku img { max-width: 200px; height: auto; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
+        .detail-item { margin-bottom: 15px; }
+        .detail-label { font-weight: bold; color: #48a39e; }
+        .tombol-kembali { display: inline-block; background-color: #48a39e; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: bold; transition: background-color 0.3s; margin-top: 20px; }
+        .tombol-kembali:hover { background-color: #F2AB3B; }
+
+        /* Gaya untuk ikon aksi */
+        .icon-edit, .icon-delete {
+            cursor: pointer;
+            margin: 0 10px;
+            font-size: 18px;
+            padding: 5px;
+            border-radius: 4px;
+            transition: background-color 0.3s;
+        }
+        .icon-edit:hover {
+            background-color: #e8f4f8;
+        }
+        .icon-delete:hover {
+            background-color: #ffeaea;
+        }
+
+        @media screen and (max-width: 600px) {
+            body { padding: 15px 10px; }
+            h1 { font-size: 20px; }
+            .wadah-detail { padding: 20px; }
+        }
+    </style>
+</head>
+<body>
+
+    <h1 id="judulHalaman">Detail Buku</h1>
+
+    <div class="wadah-detail" id="wadahDetail">
+        <!-- Konten akan diisi melalui JavaScript berdasarkan ?id=... -->
+    </div>
+
+    <script>
+        const bukuData = [
+            {
+                id: "1",
+                judul: "Guru Gembul Bicara Pendidikan",
+                penulis: "Irma Susanti, Hermawan Aksan",
+                tahun: "2023",
+                kategori: "Pendidikan",
+                cover: "assets/ggbp.jpg",
+                deskripsi: "Buku inspiratif yang membahas gagasan pendidikan dengan gaya dialog yang ringan dan penuh semangat."
+            },
+            {
+                id: "2",
+                judul: "Andai Aku Menteri Pendidikan",
+                penulis: "Alfian Bahri",
+                tahun: "2024",
+                kategori: "Ilmu Sosial",
+                cover: "assets/ab.jpg",
+                deskripsi: "Refleksi dan rencana aksi pada sistem pendidikan, ditawarkan dari perspektif tokoh fiksi sebagai menteri."
+            },
+            {
+                id: "3",
+                judul: "With No Edge Nor Doubt",
+                penulis: "Ahmad Muhaimin",
+                tahun: "2024",
+                kategori: "Kumpulan Puisi",
+                cover: "assets/min.jpeg",
+                deskripsi: "Kumpulan puisi modern yang penuh emosi dan imaji, cocok untuk pembaca yang mencari kedalaman rasa."
+            }
+        ];
+
+        function loadFromStorage() {
+            try {
+                const raw = localStorage.getItem('katalogBuku');
+                return raw ? JSON.parse(raw) : [];
+            } catch {
+                return [];
+            }
+        }
+
+        function loadDeletedIds() {
+            try {
+                const raw = localStorage.getItem('katalogHapus');
+                return raw ? JSON.parse(raw) : [];
+            } catch {
+                return [];
+            }
+        }
+
+        function deleteBookFromStorage(id) {
+            const stored = loadFromStorage().filter(b => b.id !== id);
+            localStorage.setItem('katalogBuku', JSON.stringify(stored));
+            const deleted = new Set(loadDeletedIds());
+            deleted.add(id);
+            localStorage.setItem('katalogHapus', JSON.stringify(Array.from(deleted)));
+        }
+
+        function getBookById(id) {
+            const stored = loadFromStorage();
+            const deleted = new Set(loadDeletedIds());
+
+            const bukuGabungan = [...bukuData];
+
+            // Jika ada buku baru/diperbarui di localStorage, tambahkan/replace
+            stored.forEach(buku => {
+                const index = bukuGabungan.findIndex(existing => existing.id === buku.id);
+                if (index === -1) {
+                    bukuGabungan.push(buku);
+                } else {
+                    bukuGabungan[index] = buku;
+                }
+            });
+
+            // Jika sudah dihapus, jangan tampilkan
+            if (deleted.has(id)) return null;
+
+            return bukuGabungan.find(b => b.id === id);
+        }
+
+        function getQueryParam(name) {
+            const params = new URLSearchParams(window.location.search);
+            return params.get(name);
+        }
+
+        function renderDetail(buku) {
+            document.title = `Detail Buku - ${buku.judul}`;
+            document.getElementById('judulHalaman').innerText = buku.judul;
+
+            const html = `
+                <div class="cover-buku">
+                    <img src="${buku.cover}" alt="Cover Buku ${buku.judul}">
+                </div>
+                <div class="detail-item">
+                    <span class="detail-label">Judul:</span> ${buku.judul}
+                </div>
+                <div class="detail-item">
+                    <span class="detail-label">Penulis:</span> ${buku.penulis}
+                </div>
+                <div class="detail-item">
+                    <span class="detail-label">Tahun:</span> ${buku.tahun}
+                </div>
+                <div class="detail-item">
+                    <span class="detail-label">Kategori:</span> ${buku.kategori}
+                </div>
+                <div class="detail-item">
+                    <span class="detail-label">Deskripsi:</span> ${buku.deskripsi}
+                </div>
+                <div class="detail-item" style="text-align: center; margin-top: 20px;">
+                    <span class="icon-edit" onclick="editBook('${buku.id}')" title="Sunting Buku">✏️ Sunting</span>
+                    <span class="icon-delete" onclick="deleteBook('${buku.id}')" title="Hapus Buku">🗑️ Hapus</span>
+                </div>
+                <a href="index8.html" class="tombol-kembali">Kembali ke Katalog</a>
+            `;
+
+            document.getElementById('wadahDetail').innerHTML = html;
+        }
+
+        function renderNotFound() {
+            document.getElementById('judulHalaman').innerText = 'Buku Tidak Ditemukan';
+            document.title = 'Detail Buku - Tidak Ditemukan';
+
+            document.getElementById('wadahDetail').innerHTML = `
+                <div class="cover-buku">
+                    <img src="https://via.placeholder.com/200x300/cccccc/333333?text=Cover+Tidak+Tersedia" alt="Cover tidak tersedia">
+                </div>
+                <p>Maaf, buku yang Anda cari tidak tersedia. Coba kembali ke katalog dan pilih buku lain.</p>
+                <a href="index8.html" class="tombol-kembali">Kembali ke Katalog</a>
+            `;
+        }
+
+        function editBook(id) {
+            window.location.href = `index8.html?edit=${encodeURIComponent(id)}`;
+        }
+
+        function deleteBook(id) {
+            if (!confirm('Yakin ingin menghapus buku ini?')) return;
+            deleteBookFromStorage(id);
+            window.location.href = 'index8.html';
+        }
+
+        const id = getQueryParam('id');
+        const bukuTerpilih = getBookById(id);
+
+        if (bukuTerpilih) {
+            renderDetail(bukuTerpilih);
+        } else {
+            renderNotFound();
+        }
+    </script>
+
+</body>
+</html>
