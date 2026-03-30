@@ -3,508 +3,340 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@100..900&display=swap" rel="stylesheet">
-    <title>Sistem Otomasi Perpustakaan Digital</title>
+    <title>Sistem Informasi Perpustakaan BSI</title>
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     
     <style>
+        /* --- ROOT & THEME --- */
+        :root {
+            --bg-body: #0f172a;
+            --bg-card: #1e293b;
+            --primary: #48a39e;
+            --primary-hover: #367c78;
+            --accent: #F2AB3B;
+            --text-main: #f8fafc;
+            --text-muted: #94a3b8;
+            --danger: #ef4444;
+            --border: rgba(255, 255, 255, 0.08);
+            --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        * { box-sizing: border-box; }
         body { 
             font-family: 'Inter', sans-serif; 
-            color: #333; 
+            background-color: var(--bg-body); 
+            color: var(--text-main); 
             margin: 0; 
-            padding: 40px 20px; 
-            position: relative;
-            box-sizing: border-box;
+            line-height: 1.6;
         }
-        body::before {
-            content: '';
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100vw;
-            height: 100vh;
-            background-image: url('assets/perpus.jpeg');
-            background-size: cover;
-            background-position: center;
-            background-attachment: fixed;
-            filter: blur(5px);
-            opacity: 0.5;
-            z-index: -1;
-            transform: translateZ(0);
-        }
-        .header-utama {
-            background-color: rgba(255, 255, 255, 0.9);
-            padding: 24px 20px;
-            margin: 0 auto 30px auto;
-            text-align: center;
-            border-radius: 12px;
-            max-width: 1000px;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.05);
-            backdrop-filter: blur(5px);
-        }
-        .header-utama h1 { font-size: 28px; color: #48a39e; margin: 0 0 8px 0; padding: 0; }
-        .header-utama p { font-size: 16px; color: #444; margin: 0; }
+
+        .container { max-width: 1000px; margin: 0 auto; padding: 40px 20px; }
+        .hidden { display: none !important; }
         
-        .wadah-pencarian { max-width: 1000px; margin: 0 auto 20px auto; display: flex; gap: 10px; }
-        .input-pencarian { flex-grow: 1; padding: 12px 15px; border: 1px solid #ccc; border-radius: 6px; font-size: 16px; font-family: inherit; transition: border-color 0.3s; }
-        .input-pencarian:focus { outline: none; border-color: #48a39e; box-shadow: 0 0 5px rgba(52, 152, 219, 0.3); }
-        .tombol-cari { display: inline-block; background-color: #48a39e; color: white; border: none; padding: 12px 28px; border-radius: 6px; font-weight: bold; font-size: 15px; cursor: pointer; transition: all 0.3s ease; box-shadow: 0 2px 8px rgba(52, 152, 219, 0.4); box-sizing: border-box; }
-        .tombol-cari:hover { background-color: #F2AB3B; box-shadow: 0 4px 12px rgba(52, 152, 219, 0.45); transform: translateY(-2px); }
+        /* --- ANIMASI --- */
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .animate { animation: fadeIn 0.4s ease forwards; }
 
-        .wadah-tabel { width: 100%; max-width: 1000px; margin: 0 auto 30px auto; overflow-x: auto; box-shadow: 0 4px 10px rgba(0,0,0,0.08); border-radius: 8px; background-color: #ffffff; }
-        table { width: 100%; border-collapse: separate; border-spacing: 0; background-color: #ffffff; table-layout: fixed; border-radius: 8px; overflow: hidden; }
-        th { background-color: #48a39e; color: #ffffff; padding: 15px; text-align: left; font-weight: 600; white-space: nowrap; }
-        th:first-child, td:first-child { width: 40px; text-align: center; }
-        td { padding: 12px 15px; border-bottom: 1px solid #eeeeee; word-break: break-word; }
-        tr:last-child td { border-bottom: none; }
-        tr:hover { background-color: #f8fbff; }
+        /* --- HEADER --- */
+        header { text-align: center; margin-bottom: 40px; }
+        header h1 { font-size: 2.2rem; font-weight: 800; color: var(--primary); margin: 0; }
+        header p { color: var(--text-muted); margin-top: 8px; font-size: 0.95rem; }
 
-        .wadah-tombol { text-align: center; }
-        .tombol-utama { display: inline-block; background-color: #48a39e; color: white; padding: 12px 28px; text-decoration: none; border-radius: 6px; font-weight: bold; font-size: 15px; transition: all 0.3s ease; box-shadow: 0 2px 8px rgba(52, 152, 219, 0.4); box-sizing: border-box; border: none; outline: none; }
-        .tombol-utama:hover { background-color: #F2AB3B; box-shadow: 0 4px 12px rgba(52, 152, 219, 0.45); transform: translateY(-2px); }
+        /* --- TOOLBAR (Pencarian) --- */
+        .toolbar { 
+            display: flex; gap: 10px; margin-bottom: 20px; 
+            background: var(--bg-card); padding: 10px; 
+            border-radius: 14px; border: 1px solid var(--border);
+        }
+        .search-box { flex: 1; }
+        .search-box input {
+            width: 100%; background: #0f172a; border: 1px solid var(--border);
+            padding: 12px 18px; border-radius: 10px; color: white;
+            font-size: 0.95rem; transition: var(--transition);
+        }
+        .search-box input:focus { outline: none; border-color: var(--primary); }
 
-        /* Tambahan: gaya untuk tautan judul buku di tabel */
-        .link-buku { color: inherit; text-decoration: none; }
-        .link-buku:hover { color: #F2AB3B; text-decoration: underline; }
+        .btn {
+            padding: 12px 24px; border-radius: 10px; font-weight: 600;
+            cursor: pointer; transition: var(--transition); border: none;
+            display: inline-flex; align-items: center; justify-content: center; gap: 8px; font-size: 0.9rem;
+        }
+        .btn-primary { background: var(--primary); color: #fff; }
+        .btn-primary:hover { background: var(--primary-hover); transform: translateY(-2px); }
+        .btn-outline { background: transparent; border: 1px solid var(--border); color: var(--text-main); }
+        .btn-outline:hover { background: var(--border); }
 
-        /* Pastikan input/textarea tidak overflow dari wadahnya */
-        #formTambah input,
-        #formTambah textarea {
-            width: 100%;
-            box-sizing: border-box;
+        /* --- TABEL --- */
+        .card-table { 
+            background: var(--bg-card); border-radius: 18px; 
+            border: 1px solid var(--border); overflow: hidden;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+        }
+        table { width: 100%; border-collapse: collapse; }
+        th { background: rgba(72, 163, 158, 0.1); padding: 18px 20px; color: var(--primary); font-size: 0.8rem; text-transform: uppercase; letter-spacing: 1px; border-bottom: 1px solid var(--border); text-align: left; }
+        td { padding: 16px 20px; border-bottom: 1px solid var(--border); font-size: 0.9rem; }
+
+        .book-link { color: var(--text-main); font-weight: 600; text-decoration: none; cursor: pointer; }
+        .book-link:hover { color: var(--accent); text-decoration: underline; }
+        .badge { background: rgba(72, 163, 158, 0.15); color: var(--primary); padding: 4px 10px; border-radius: 6px; font-size: 0.75rem; font-weight: 700; }
+
+        .action-footer { margin-top: 25px; text-align: center; }
+
+        /* --- DETAIL VIEW --- */
+        .detail-card { 
+            background: var(--bg-card); padding: 40px; border-radius: 20px; 
+            border: 1px solid var(--border); display: flex; gap: 40px; align-items: flex-start;
+        }
+        .cover-area { flex: 0 0 240px; }
+        .cover-area img { width: 100%; border-radius: 12px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); border: 1px solid var(--border); }
+        .info-area { flex: 1; }
+        .info-area h2 { font-size: 2rem; margin: 0 0 15px 0; color: var(--primary); line-height: 1.2; }
+        .meta-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+        .meta-label { color: var(--text-muted); font-size: 0.7rem; text-transform: uppercase; font-weight: 700; display: block; margin-bottom: 4px; }
+        .meta-value { font-size: 1rem; color: var(--text-main); margin-bottom: 15px; }
+
+        /* --- FORM --- */
+        .form-card { background: var(--bg-card); padding: 35px; border-radius: 20px; border: 1px solid var(--border); }
+        .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+        .full-width { grid-column: span 2; }
+        .form-group { display: flex; flex-direction: column; gap: 6px; }
+        .form-group label { font-size: 0.85rem; color: var(--text-muted); font-weight: 600; }
+        .form-group input, .form-group textarea { background: #0f172a; border: 1px solid var(--border); padding: 12px; border-radius: 10px; color: white; font-family: inherit; }
+        .form-group input:focus, .form-group textarea:focus { border-color: var(--primary); outline: none; }
+
+        /* --- AKSI ICON --- */
+        .btn-icon { background: rgba(255,255,255,0.05); border: none; cursor: pointer; padding: 10px; border-radius: 8px; color: var(--text-muted); margin-left: 5px; }
+        .btn-icon:hover.edit { color: var(--accent); }
+        .btn-icon:hover.delete { color: var(--danger); }
+
+        /* --- MOBILE RESPONSIVE --- */
+        @media (max-width: 768px) {
+            .container { padding: 20px 15px; }
+            header h1 { font-size: 1.8rem; }
+
+            /* Table to Card Mobile */
+            .card-table { background: transparent; border: none; box-shadow: none; }
+            table, thead, tbody, th, td, tr { display: block; }
+            thead { display: none; }
+            tr { background: var(--bg-card); margin-bottom: 15px; border-radius: 16px; border: 1px solid var(--border); padding: 15px; }
+            td { text-align: right; padding: 10px 0; border-bottom: 1px solid rgba(255,255,255,0.05); display: flex; justify-content: flex-end; align-items: center; position: relative; }
+            td::before { content: attr(data-label); position: absolute; left: 0; font-weight: 700; text-transform: uppercase; font-size: 0.7rem; color: var(--primary); }
+            
+            /* Detail Mobile (FOTO TENGAH) */
+            .detail-card { flex-direction: column; align-items: center; text-align: center; padding: 25px; }
+            .cover-area { flex: 0 0 auto; width: 220px; margin-bottom: 10px; }
+            .info-area h2 { font-size: 1.6rem; }
+            .meta-grid { grid-template-columns: 1fr; gap: 0; }
+            .meta-value { margin-bottom: 20px; }
+
+            /* Form Mobile */
+            .form-grid { grid-template-columns: 1fr; }
+            .full-width { grid-column: span 1; }
         }
 
-        /* Gaya untuk ikon aksi */
-        .icon-edit, .icon-delete {
-            cursor: pointer;
-            margin: 0 5px;
-            padding: 6px;
-            border-radius: 4px;
-            transition: all 0.3s;
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            vertical-align: middle;
-        }
-        .icon-edit {
-            color: #48a39e;
-        }
-        .icon-edit:hover {
-            background-color: #e8f4f8;
-            color: #367c78;
-        }
-        .icon-delete {
-            color: #e74c3c;
-        }
-        .icon-delete:hover {
-            background-color: #ffeaea;
-            color: #c0392b;
-        }
-
-        @media screen and (max-width: 600px) {
-            body { padding: 15px 10px; }
-            .header-utama { padding: 20px 15px; margin-bottom: 20px; }
-            .header-utama h1 { font-size: 22px; }
-            .header-utama p { font-size: 14px; }
-            th, td { padding: 8px 10px; font-size: 14px; }
-            th { white-space: normal; }
-            .wadah-pencarian { flex-direction: column; gap: 8px; }
-            .input-pencarian { font-size: 14px; padding: 10px 12px; }
-            .tombol-cari { width: 100%; padding: 10px; font-size: 14px; }
-        .wadah-tabel { margin: 0 0 20px 0; }
-        table { font-size: 14px; min-width: 700px; }
-            .wadah-tombol { margin: 20px 0; }
-            .tombol-utama { display: block; width: 100%; font-size: 14px; padding: 12px; margin-bottom: 10px; }
-            #formTambah { margin: 20px -10px; padding: 15px; }
-            #formTambah h2 { font-size: 18px; }
-            #formTambah > div { grid-template-columns: 1fr; }
-            #formTambah label { padding: 10px; }
-            #formTambah input, #formTambah textarea { font-size: 14px; padding: 8px; }
-            .icon-edit, .icon-delete { font-size: 16px; padding: 4px; }
-        }
+        footer { text-align: center; margin-top: 50px; color: var(--text-muted); font-size: 0.8rem; padding-bottom: 30px; }
     </style>
 </head>
 <body>
 
-    <header class="header-utama">
-        <h1>Sistem Informasi Perpustakaan BSI</h1>
-        <p>Antarmuka katalog literatur untuk mendukung transformasi digital dan otomasi layanan.</p>
-    </header>
+    <div class="container">
+        <header>
+            <h1>Sistem Perpustakaan BSI</h1>
+            <p>Katalog Digital Literasi BSI</p>
+        </header>
 
-    <div class="wadah-pencarian">
-        <input type="text" id="inputPencarian" class="input-pencarian" placeholder="Masukkan kata kunci (Judul, Penulis, atau Kategori)...">
-        <button class="tombol-cari">Cari</button>
-    </div>
+        <!-- HALAMAN DAFTAR -->
+        <section id="view-list" class="animate">
+            <div class="toolbar">
+                <div class="search-box">
+                    <input type="text" id="inputPencarian" placeholder="Cari judul, penulis, atau kategori..." onkeyup="handleSearchKey(event)">
+                </div>
+                <button class="btn btn-primary" onclick="filterTabel()">Cari</button>
+            </div>
 
-    <div class="wadah-tabel">
-        <table id="tabelKatalog">
-            <!-- Tabel akan di-render secara otomatis oleh JavaScript -->
-        </table>
-    </div>
+            <div class="card-table">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>No</th>
+                            <th>Judul Buku</th>
+                            <th>Penulis</th>
+                            <th>Tahun</th>
+                            <th>Kategori</th>
+                            <th style="text-align: center;">Aksi</th>
+                        </tr>
+                    </thead>
+                    <tbody id="isiTabel"></tbody>
+                </table>
+            </div>
 
-    <div class="wadah-tombol">
-        <button id="btnTambah" class="tombol-utama">+ Tambah Koleksi Baru</button>
-    </div>
+            <div class="action-footer">
+                <button class="btn btn-primary" onclick="bukaForm()">+ Tambah Koleksi Baru</button>
+            </div>
+        </section>
 
-    <div id="formTambah" style="max-width: 800px; margin: 20px auto 30px auto; display: none; background: #fff; padding: 20px; border-radius: 8px; box-shadow: 0 4px 10px rgba(0,0,0,0.05);">
-        <h2 style="margin-top: 0;">Tambah Koleksi Baru</h2>
-        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
-            <label style="display: block; border: 1px solid #e0e0e0; border-radius: 10px; padding: 12px;">
-                Judul
-                <input id="inputJudul" type="text" style="width:100%; padding: 10px; margin-top: 6px; border: 1px solid #ccc; border-radius: 6px;" />
-            </label>
-            <label style="display: block; border: 1px solid #e0e0e0; border-radius: 10px; padding: 12px;">
-                Penulis
-                <input id="inputPenulis" type="text" style="width:100%; padding: 10px; margin-top: 6px; border: 1px solid #ccc; border-radius: 6px;" />
-            </label>
-            <label style="display: block; border: 1px solid #e0e0e0; border-radius: 10px; padding: 12px;">
-                Tahun
-                <input id="inputTahun" type="text" style="width:100%; padding: 10px; margin-top: 6px; border: 1px solid #ccc; border-radius: 6px;" />
-            </label>
-            <label style="display: block; border: 1px solid #e0e0e0; border-radius: 10px; padding: 12px;">
-                Kategori
-                <input id="inputKategori" type="text" style="width:100%; padding: 10px; margin-top: 6px; border: 1px solid #ccc; border-radius: 6px;" />
-            </label>
-            <label style="grid-column: 1 / -1; display: block; border: 1px solid #e0e0e0; border-radius: 10px; padding: 12px;">
-                URL Cover (opsional)
-                <input id="inputCover" type="text" placeholder="https://..." style="width:100%; padding: 10px; margin-top: 6px; border: 1px solid #ccc; border-radius: 6px;" />
-            </label>
-            <label style="grid-column: 1 / -1; display: block; border: 1px solid #e0e0e0; border-radius: 10px; padding: 12px;">
-                Deskripsi (opsional)
-                <textarea id="inputDeskripsi" rows="4" style="width:100%; padding: 10px; margin-top: 6px; border: 1px solid #ccc; border-radius: 6px;"></textarea>
-            </label>
-        </div>
-        <div style="margin-top: 18px; display: flex; gap: 12px;">
-            <button id="btnSimpan" class="tombol-utama" style="flex: 1;">Simpan</button>
-            <button id="btnBatal" class="tombol-utama" style="flex: 1; background-color: #ccc; color: #333;">Batal</button>
-        </div>
+        <!-- HALAMAN DETAIL (Sudah diperbaiki untuk Foto Tengah di Mobile) -->
+        <section id="view-detail" class="hidden animate">
+            <button class="btn btn-outline" style="margin-bottom: 20px;" onclick="gantiHalaman('view-list')">← Kembali</button>
+            <div id="kontenDetail"></div>
+        </section>
+
+        <!-- HALAMAN FORM (Sudah ditambahkan Deskripsi) -->
+        <section id="view-form" class="hidden animate">
+            <div class="form-card">
+                <h2 id="formTitle" style="margin-top:0; color:var(--primary); margin-bottom: 25px;">Form Koleksi</h2>
+                <div class="form-grid">
+                    <input type="hidden" id="editId">
+                    <div class="form-group">
+                        <label>Judul Buku</label>
+                        <input type="text" id="f_judul" placeholder="Masukkan judul buku">
+                    </div>
+                    <div class="form-group">
+                        <label>Penulis</label>
+                        <input type="text" id="f_penulis" placeholder="Nama penulis">
+                    </div>
+                    <div class="form-group">
+                        <label>Tahun Terbit</label>
+                        <input type="text" id="f_tahun" placeholder="Contoh: 2024">
+                    </div>
+                    <div class="form-group">
+                        <label>Kategori</label>
+                        <input type="text" id="f_kategori" placeholder="Contoh: Pendidikan">
+                    </div>
+                    <div class="form-group full-width">
+                        <label>URL / Path Cover Buku</label>
+                        <input type="text" id="f_cover" placeholder="Contoh: assets/nama-file.jpg">
+                    </div>
+                    <div class="form-group full-width">
+                        <label>Sinopsis / Deskripsi</label>
+                        <textarea id="f_deskripsi" rows="5" placeholder="Tuliskan ringkasan buku..."></textarea>
+                    </div>
+                </div>
+                <div style="margin-top: 30px; display: flex; gap: 12px;">
+                    <button class="btn btn-primary" onclick="simpanBuku()">Simpan Data</button>
+                    <button class="btn btn-outline" onclick="gantiHalaman('view-list')">Batal</button>
+                </div>
+            </div>
+        </section>
+
+        <footer>
+            &copy; 2026 BSI Digital Library &bull; Managed by <b>Min</b>
+        </footer>
     </div>
 
     <script>
-        // ==========================================
-        // --- 1. SELEKSI ELEMEN DOM ---
-        // ==========================================
-        const inputPencarian = document.getElementById("inputPencarian");
-        const tabel = document.getElementById("tabelKatalog");
-        const btnTambah = document.getElementById("btnTambah");
-        const formTambah = document.getElementById("formTambah");
-        const btnSimpan = document.getElementById("btnSimpan");
-        const btnBatal = document.getElementById("btnBatal");
-        const inputJudul = document.getElementById("inputJudul");
-        const inputPenulis = document.getElementById("inputPenulis");
-        const inputTahun = document.getElementById("inputTahun");
-        const inputKategori = document.getElementById("inputKategori");
-        const inputCover = document.getElementById("inputCover");
-        const inputDeskripsi = document.getElementById("inputDeskripsi");
-
-        // ==========================================
-        // --- 2. DATA DEFAULT ---
-        // ==========================================
-        const defaultBooks = [
-            {
-                id: "1",
-                judul: "Guru Gembul Bicara Pendidikan",
-                penulis: "Irma Susanti, Hermawan Aksan",
-                tahun: "2023",
-                kategori: "Pendidikan",
-                cover: "assets/ggbp.jpg",
-                deskripsi: "Buku inspiratif yang membahas gagasan pendidikan dengan gaya dialog yang ringan dan penuh semangat."
-            },
-            {
-                id: "2",
-                judul: "Andai Aku Menteri Pendidikan",
-                penulis: "Alfian Bahri",
-                tahun: "2024",
-                kategori: "Ilmu Sosial",
-                cover: "assets/ab.jpg",
-                deskripsi: "Refleksi dan rencana aksi pada sistem pendidikan, ditawarkan dari perspektif tokoh fiksi sebagai menteri."
-            },
-            {
-                id: "3",
-                judul: "With No Edge Nor Doubt",
-                penulis: "Ahmad Muhaimin",
-                tahun: "2024",
-                kategori: "Kumpulan Puisi",
-                cover: "assets/min.jpeg",
-                deskripsi: "Kumpulan puisi modern yang penuh emosi dan imaji, cocok untuk pembaca yang mencari kedalaman rasa."
-            }
+        let daftarBuku = JSON.parse(localStorage.getItem('bsi_db')) || [
+            { id: "1", judul: "Guru Gembul Bicara Pendidikan", penulis: "Irma Susanti", tahun: "2023", kategori: "Pendidikan", cover: "assets/ggbp.jpg", deskripsi: "Buku inspiratif yang membahas gagasan pendidikan dengan gaya dialog yang ringan." },
+            { id: "2", judul: "Andai Aku Menteri Pendidikan", penulis: "Alfian Bahri", tahun: "2024", kategori: "Ilmu Sosial", cover: "assets/ab.jpg", deskripsi: "Refleksi sistem pendidikan dari perspektif menteri fiksi." },
+            { id: "3", judul: "With No Edge Nor Doubt", penulis: "Ahmad Muhaimin", tahun: "2024", kategori: "Kumpulan Puisi", cover: "assets/min.jpeg", deskripsi: "Kumpulan puisi modern penuh emosi." }
         ];
 
-        // ==========================================
-        // --- 3. FUNGSI PENYIMPANAN (LOCAL STORAGE) ---
-        // ==========================================
-        function loadFromStorage() {
-            try {
-                const raw = localStorage.getItem('katalogBuku');
-                return raw ? JSON.parse(raw) : [];
-            } catch {
-                return [];
-            }
+        function gantiHalaman(id) {
+            document.querySelectorAll('section').forEach(s => s.classList.add('hidden'));
+            document.getElementById(id).classList.remove('hidden');
+            window.scrollTo(0,0);
         }
 
-        function saveToStorage(data) {
-            localStorage.setItem('katalogBuku', JSON.stringify(data));
+        function renderTabel() {
+            const tbody = document.getElementById('isiTabel');
+            tbody.innerHTML = daftarBuku.map((b, i) => `
+                <tr>
+                    <td data-label="No" style="text-align:center;">${i+1}</td>
+                    <td data-label="Judul"><span class="book-link" onclick="tampilkanDetail('${b.id}')">${b.judul}</span></td>
+                    <td data-label="Penulis">${b.penulis}</td>
+                    <td data-label="Tahun">${b.tahun}</td>
+                    <td data-label="Kategori"><span class="badge">${b.kategori}</span></td>
+                    <td data-label="Aksi" style="text-align:center;">
+                        <button class="btn-icon edit" onclick="bukaForm('${b.id}')">✎</button>
+                        <button class="btn-icon delete" onclick="hapusBuku('${b.id}')">🗑</button>
+                    </td>
+                </tr>
+            `).join('');
+            localStorage.setItem('bsi_db', JSON.stringify(daftarBuku));
         }
 
-        function getDeletedIds() {
-            try {
-                const raw = localStorage.getItem('katalogHapus');
-                return raw ? JSON.parse(raw) : [];
-            } catch {
-                return [];
-            }
+        function tampilkanDetail(id) {
+            const b = daftarBuku.find(x => x.id === id);
+            document.getElementById('kontenDetail').innerHTML = `
+                <div class="detail-card">
+                    <div class="cover-area">
+                        <img src="${b.cover}" onerror="this.src='https://via.placeholder.com/300x450?text=No+Cover'">
+                    </div>
+                    <div class="info-area">
+                        <span class="meta-label">Judul Buku</span>
+                        <h2>${b.judul}</h2>
+                        <div class="meta-grid">
+                            <div><span class="meta-label">Penulis</span><div class="meta-value">${b.penulis}</div></div>
+                            <div><span class="meta-label">Tahun</span><div class="meta-value">${b.tahun}</div></div>
+                            <div><span class="meta-label">Kategori</span><div class="meta-value">${b.kategori}</div></div>
+                        </div>
+                        <div style="border-top:1px solid var(--border); padding-top:15px; margin-top:10px;">
+                            <span class="meta-label">Sinopsis</span>
+                            <p style="color:var(--text-muted); text-align:justify; font-size:0.95rem;">${b.deskripsi || 'Deskripsi belum tersedia.'}</p>
+                        </div>
+                    </div>
+                </div>
+            `;
+            gantiHalaman('view-detail');
         }
 
-        function setDeletedIds(ids) {
-            localStorage.setItem('katalogHapus', JSON.stringify(ids));
+        function bukaForm(id = null) {
+            const b = daftarBuku.find(x => x.id === id);
+            document.getElementById('formTitle').innerText = id ? "Edit Koleksi" : "Tambah Koleksi";
+            document.getElementById('editId').value = id || "";
+            document.getElementById('f_judul').value = b ? b.judul : "";
+            document.getElementById('f_penulis').value = b ? b.penulis : "";
+            document.getElementById('f_tahun').value = b ? b.tahun : "";
+            document.getElementById('f_kategori').value = b ? b.kategori : "";
+            document.getElementById('f_cover').value = b ? b.cover : "";
+            document.getElementById('f_deskripsi').value = b ? b.deskripsi : "";
+            gantiHalaman('view-form');
         }
 
-        // ==========================================
-        // --- 4. FUNGSI PENGELOLAAN DATA BUKU ---
-        // ==========================================
-        function getAllBooks() {
-            const stored = loadFromStorage();
-            const deleted = new Set(getDeletedIds());
-            const merged = [];
-
-            // Masukkan default books (kecuali yang sudah dihapus)
-            defaultBooks.forEach(b => {
-                if (!deleted.has(b.id)) {
-                    merged.push(b);
-                }
-            });
-
-            // Masukkan buku yang disimpan (tambahan / update), kecuali yang dihapus
-            stored.forEach(b => {
-                if (!deleted.has(b.id)) {
-                    // Hapus versi default jika ada, lalu tambahkan versi terbaru
-                    const idx = merged.findIndex(m => m.id === b.id);
-                    if (idx !== -1) merged.splice(idx, 1);
-                    merged.push(b);
-                }
-            });
-
-            return merged;
-        }
-
-        function markBookDeleted(id) {
-            const deleted = new Set(getDeletedIds());
-            deleted.add(id);
-            setDeletedIds(Array.from(deleted));
-        }
-
-        function unmarkBookDeleted(id) {
-            const deleted = new Set(getDeletedIds());
-            deleted.delete(id);
-            setDeletedIds(Array.from(deleted));
-        }
-
-        // ==========================================
-        // --- 5. FUNGSI RENDER ANTARMUKA ---
-        // ==========================================
-        function renderTable(books) {
-            const rows = [
-                `<tr>
-                    <th>No.</th>
-                    <th>Judul Buku</th>
-                    <th>Penulis</th>
-                    <th>Tahun</th>
-                    <th>Kategori</th>
-                    <th>Aksi</th>
-                </tr>`
-            ];
-
-            books.forEach((b, idx) => {
-                rows.push(`
-                    <tr>
-                        <td>${idx + 1}</td>
-                        <td><a class="link-buku" href="detail.html?id=${b.id}">${b.judul}</a></td>
-                        <td>${b.penulis}</td>
-                        <td>${b.tahun}</td>
-                        <td>${b.kategori}</td>
-                        <td style="white-space: nowrap;">
-                            <span class="icon-edit" onclick="editBook('${b.id}')" title="Sunting">
-                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
-                            </span>
-                            <span class="icon-delete" onclick="deleteBook('${b.id}')" title="Hapus">
-                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path><line x1="10" y1="11" x2="10" y2="17"></line><line x1="14" y1="11" x2="14" y2="17"></line></svg>
-                            </span>
-                        </td>
-                    </tr>
-                `);
-            });
-
-            tabel.innerHTML = rows.join('');
-        }
-
-        let editingId = null;
-
-        // ==========================================
-        // --- 6. FUNGSI INTERAKSI PENGGUNA ---
-        // ==========================================
-        function refreshTable() {
-            renderTable(getAllBooks());
-            filterTable();
-        }
-
-        function setEditMode(id) {
-            editingId = id;
-            btnSimpan.innerText = 'Perbarui';
-            btnSimpan.classList.add('tombol-utama');
-            btnSimpan.style.backgroundColor = '#F2AB3B';
-        }
-
-        function clearEditMode() {
-            editingId = null;
-            btnSimpan.innerText = 'Simpan';
-            btnSimpan.style.backgroundColor = '';
-        }
-
-        function filterTable() {
-            const kataKunci = inputPencarian.value.toLowerCase();
-            const baris = tabel.getElementsByTagName('tr');
-
-            for (let i = 1; i < baris.length; i++) {
-                const selData = baris[i].getElementsByTagName('td');
-                let adaKecocokan = false;
-
-                for (let j = 0; j < selData.length; j++) {
-                    if (selData[j] && selData[j].innerText.toLowerCase().includes(kataKunci)) {
-                        adaKecocokan = true;
-                        break;
-                    }
-                }
-
-                baris[i].style.display = adaKecocokan ? '' : 'none';
-            }
-        }
-
-        function showForm(show) {
-            formTambah.style.display = show ? 'block' : 'none';
-            if (!show) {
-                inputJudul.value = '';
-                inputPenulis.value = '';
-                inputTahun.value = '';
-                inputKategori.value = '';
-                inputCover.value = '';
-            }
-        }
-
-        function generateNewId() {
-            const allBooks = getAllBooks();
-            const maxId = allBooks.reduce((max, b) => {
-                const n = parseInt(b.id, 10);
-                return Number.isNaN(n) ? max : Math.max(max, n);
-            }, 0);
-            return String(maxId + 1);
-        }
-
-        function addBook(book) {
-            const stored = loadFromStorage();
-            const idx = stored.findIndex(b => b.id === book.id);
-            if (idx > -1) {
-                stored[idx] = book; // update
-            } else {
-                stored.push(book);
-            }
-            saveToStorage(stored);
-            unmarkBookDeleted(book.id);
-            refreshTable();
-        }
-
-        function deleteBook(id) {
-            if (!confirm('Yakin ingin menghapus buku ini?')) {
-                return;
-            }
-            const stored = loadFromStorage();
-            const filtered = stored.filter(b => {
-                return b.id !== id;
-            });
-            saveToStorage(filtered);
-            markBookDeleted(id);
-            refreshTable();
-        }
-
-        function editBook(id) {
-            const all = getAllBooks();
-            const buku = all.find(b => b.id === id);
-            if (!buku) return;
-
-            inputJudul.value = buku.judul;
-            inputPenulis.value = buku.penulis;
-            inputTahun.value = buku.tahun;
-            inputKategori.value = buku.kategori;
-            inputCover.value = buku.cover;
-            inputDeskripsi.value = buku.deskripsi || '';
-
-            setEditMode(id);
-            showForm(true);
-        }
-
-        // ==========================================
-        // --- 7. EVENT LISTENERS ---
-        // ==========================================
-        btnTambah.addEventListener('click', () => {
-            clearEditMode();
-            showForm(true);
-        });
-        btnBatal.addEventListener('click', () => {
-            clearEditMode();
-            showForm(false);
-        });
-
-        btnSimpan.addEventListener('click', () => {
-            const judul = inputJudul.value.trim();
-            const penulis = inputPenulis.value.trim();
-            const tahun = inputTahun.value.trim();
-            const kategori = inputKategori.value.trim();
-            const cover = inputCover.value.trim() || `https://via.placeholder.com/200x300/48a39e/ffffff?text=${encodeURIComponent(judul)}`;
-            const deskripsi = inputDeskripsi.value.trim() || 'Deskripsi belum tersedia.';
-
-            if (!judul || !penulis || !tahun || !kategori) {
-                alert('Silakan isi semua kolom (judul, penulis, tahun, kategori).');
-                return;
-            }
-
-            const bookData = {
-                id: editingId || generateNewId(),
-                judul,
-                penulis,
-                tahun,
-                kategori,
-                cover,
-                deskripsi
+        function simpanBuku() {
+            const id = document.getElementById('editId').value;
+            const data = {
+                id: id || Date.now().toString(),
+                judul: document.getElementById('f_judul').value,
+                penulis: document.getElementById('f_penulis').value,
+                tahun: document.getElementById('f_tahun').value,
+                kategori: document.getElementById('f_kategori').value,
+                cover: document.getElementById('f_cover').value || 'assets/default.jpg',
+                deskripsi: document.getElementById('f_deskripsi').value
             };
-
-            addBook(bookData);
-            clearEditMode();
-            showForm(false);
-        });
-
-        inputPencarian.addEventListener('keyup', filterTable);
-
-        // ==========================================
-        // --- 8. INISIALISASI HALAMAN ---
-        // ==========================================
-        
-        // Cek jika URL memiliki parameter edit, langsung buka form dan isi data
-        const urlParams = new URLSearchParams(window.location.search);
-        const editId = urlParams.get('edit');
-        if (editId) {
-            editBook(editId);
+            
+            if(!data.judul || !data.penulis) return alert("Judul dan Penulis wajib diisi!");
+            
+            if(id) {
+                const idx = daftarBuku.findIndex(x => x.id === id);
+                daftarBuku[idx] = data;
+            } else {
+                daftarBuku.push(data);
+            }
+            renderTabel();
+            gantiHalaman('view-list');
         }
 
-        // Muat tabel saat halaman pertama kali dibuka
-        refreshTable();
+        function hapusBuku(id) {
+            if(confirm("Yakin ingin menghapus buku ini?")) {
+                daftarBuku = daftarBuku.filter(x => x.id !== id);
+                renderTabel();
+            }
+        }
+
+        function filterTabel() {
+            const key = document.getElementById('inputPencarian').value.toLowerCase();
+            const rows = document.querySelectorAll('#isiTabel tr');
+            rows.forEach(r => r.style.display = r.innerText.toLowerCase().includes(key) ? '' : 'none');
+        }
+
+        function handleSearchKey(e) { if(e.key === "Enter") filterTabel(); }
+
+        renderTabel();
     </script>
-    <footer style="text-align:center; margin-top:40px; font-size:14px; color:#555; background-color:rgba(255,255,255,0.85); padding:10px; border-radius:8px; max-width:300px; margin-left:auto; margin-right:auto;">
-    Made with 🧠 by 
-    <a href="https://github.com/mymn-fy" target="_blank"
-        style="color:inherit; text-decoration:none;"
-        onmousedown="this.style.color='#F2AB3B'; this.style.textDecoration='underline';"
-        onmouseup="this.style.color='inherit'; this.style.textDecoration='none';"
-        onmouseleave="this.style.color='inherit'; this.style.textDecoration='none';">
-        Min
-    </a>
-</footer>
 </body>
 </html>
