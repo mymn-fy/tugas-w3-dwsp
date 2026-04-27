@@ -1,14 +1,9 @@
-name: Deploy to GitHub Pages
+name: Deploy to InfinityFree
 
 on:
   push:
     branches:
       - main
-
-permissions:
-  contents: read
-  pages: write
-  id-token: write
 
 jobs:
   deploy:
@@ -18,13 +13,16 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Setup Pages
-        uses: actions/configure-pages@v5
-
-      - name: Upload artifact
-        uses: actions/upload-pages-artifact@v3
+      - name: Sync files via FTP
+        uses: SamKirkland/FTP-Deploy-Action@v4.3.5
         with:
-          path: .
-
-      - name: Deploy to GitHub Pages
-        uses: actions/deploy-pages@v4
+          server: ${{ secrets.ftpupload.net }}
+          username: ${{ secrets.if0_41767982 }}
+          password: ${{ secrets.FTP_ou2AsaiKfnGT }}
+          local-dir: ./
+          server-dir: /htdocs/
+          # Mengabaikan folder .git dan .github agar tidak ikut terupload ke hosting
+          exclude: |
+            **/.git*
+            **/.git*/**
+            **/.github*/**
