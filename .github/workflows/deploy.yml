@@ -16,12 +16,12 @@ jobs:
       - name: Sync files via FTP
         uses: SamKirkland/FTP-Deploy-Action@v4.3.5
         with:
-          server: ${{ secrets.ftpupload.net }}
-          username: ${{ secrets.if0_41767982 }}
-          password: ${{ secrets.FTP_ou2AsaiKfnGT }}
+          # Menggunakan variabel rahasia dari GitHub Settings
+          server: ${{ secrets.FTP_SERVER }}
+          username: ${{ secrets.FTP_USERNAME }}
+          password: ${{ secrets.FTP_PASSWORD }}
           local-dir: ./
           server-dir: /htdocs/
-          # Mengabaikan folder .git dan .github agar tidak ikut terupload ke hosting
           exclude: |
             **/.git*
             **/.git*/**
