@@ -223,8 +223,8 @@ while ($row = mysqli_fetch_assoc($query)) {
     <!-- FOOTER (di luar .container agar full-width) -->
     <footer>
         <div class="footer-inner">
-            <div class="footer-brand">📚 BSI Digital Library</div>
-            <div class="footer-copy">&copy; 2026 &mdash; Dikembangkan oleh <span>Tim BSI</span>. Seluruh hak cipta dilindungi.</div>
+            <div class="footer-brand">BSI Digital Library</div>
+            <div class="footer-copy">&copy; 2026 &mdash; Dikembangkan oleh <span>Min</span>.</div>
         </div>
     </footer>
 
