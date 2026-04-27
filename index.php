@@ -14,8 +14,8 @@ if (isset($_POST['proses_simpan'])) {
     $judul = mysqli_real_escape_string($conn, $_POST['judul']);
     $penulis = mysqli_real_escape_string($conn, $_POST['penulis']);
     $tahun = $_POST['tahun'];
-    $penerbit = mysqli_real_escape_string($conn, $_POST['penerbit']); // Sekarang jadi Penerbit asli
-    $cover = mysqli_real_escape_string($conn, $_POST['cover']); // Path gambar
+    $penerbit = mysqli_real_escape_string($conn, $_POST['penerbit']);
+    $cover = mysqli_real_escape_string($conn, $_POST['cover']);
     $deskripsi = mysqli_real_escape_string($conn, $_POST['deskripsi']);
 
     if ($id == "") {
@@ -31,18 +31,18 @@ if (isset($_POST['proses_simpan'])) {
     header("Location: index.php");
 }
 
-// 3. Ambil data (Sesuaikan mapping ke JavaScript)
+// 3. Ambil data
 $query = mysqli_query($conn, "SELECT * FROM DataBuku ORDER BY kode_buku DESC");
 $books = [];
 while ($row = mysqli_fetch_assoc($query)) {
     $books[] = [
-        'id' => $row['kode_buku'],
-        'judul' => $row['judul_buku'],
-        'penulis' => $row['pengarang'],
-        'tahun' => $row['tahun_terbit'],
-        'penerbit' => $row['penerbit'], // Menggunakan label Penerbit
-        'deskripsi' => $row['deskripsi'],
-        'cover' => $row['cover'] ? $row['cover'] : 'assets/default.jpg' // Memanggil path dari DB
+        'id'       => $row['kode_buku'],
+        'judul'    => $row['judul_buku'],
+        'penulis'  => $row['pengarang'],
+        'tahun'    => $row['tahun_terbit'],
+        'penerbit' => $row['penerbit'],
+        'deskripsi'=> $row['deskripsi'],
+        'cover'    => $row['cover'] ? $row['cover'] : 'assets/default.jpg'
     ];
 }
 ?>
@@ -56,11 +56,21 @@ while ($row = mysqli_fetch_assoc($query)) {
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     
     <style>
-        /* CSS Tetap Sama */
-        :root { --bg-body: #0f172a; --bg-card: #1e293b; --primary: #48a39e; --primary-hover: #367c78; --accent: #F2AB3B; --text-main: #f8fafc; --text-muted: #94a3b8; --danger: #ef4444; --border: rgba(255, 255, 255, 0.08); --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
+        :root {
+            --bg-body: #0f172a;
+            --bg-card: #1e293b;
+            --primary: #48a39e;
+            --primary-hover: #367c78;
+            --accent: #F2AB3B;
+            --text-main: #f8fafc;
+            --text-muted: #94a3b8;
+            --danger: #ef4444;
+            --border: rgba(255, 255, 255, 0.08);
+            --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
         * { box-sizing: border-box; }
-        body { font-family: 'Inter', sans-serif; background-color: var(--bg-body); color: var(--text-main); margin: 0; line-height: 1.6; }
-        .container { max-width: 1000px; margin: 0 auto; padding: 40px 20px; }
+        body { font-family: 'Inter', sans-serif; background-color: var(--bg-body); color: var(--text-main); margin: 0; line-height: 1.6; display: flex; flex-direction: column; min-height: 100vh; }
+        .container { max-width: 1000px; margin: 0 auto; padding: 40px 20px; flex: 1; }
         .hidden { display: none !important; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
         .animate { animation: fadeIn 0.4s ease forwards; }
@@ -91,6 +101,37 @@ while ($row = mysqli_fetch_assoc($query)) {
         .form-group label { font-size: 0.85rem; color: var(--text-muted); }
         .form-group input, .form-group textarea { background: #0f172a; border: 1px solid var(--border); padding: 12px; border-radius: 10px; color: white; }
         .btn-icon { background: rgba(255,255,255,0.05); border: none; cursor: pointer; padding: 10px; border-radius: 8px; color: var(--text-muted); margin-left: 5px; }
+
+        /* ===== FOOTER ===== */
+        footer {
+            background: var(--bg-card);
+            border-top: 1px solid var(--border);
+            margin-top: 60px;
+            padding: 28px 20px;
+            text-align: center;
+        }
+        .footer-inner {
+            max-width: 1000px;
+            margin: 0 auto;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 6px;
+        }
+        .footer-brand {
+            font-size: 0.95rem;
+            font-weight: 700;
+            color: var(--primary);
+            letter-spacing: 0.03em;
+        }
+        .footer-copy {
+            font-size: 0.8rem;
+            color: var(--text-muted);
+        }
+        .footer-copy span {
+            color: var(--accent);
+            font-weight: 600;
+        }
     </style>
 </head>
 <body>
@@ -177,11 +218,15 @@ while ($row = mysqli_fetch_assoc($query)) {
                 </form>
             </div>
         </section>
-
-        <footer>
-            &copy; 2026 BSI Digital Library
-        </footer>
     </div>
+
+    <!-- FOOTER (di luar .container agar full-width) -->
+    <footer>
+        <div class="footer-inner">
+            <div class="footer-brand">📚 BSI Digital Library</div>
+            <div class="footer-copy">&copy; 2026 &mdash; Dikembangkan oleh <span>Tim BSI</span>. Seluruh hak cipta dilindungi.</div>
+        </div>
+    </footer>
 
     <script>
         let daftarBuku = <?php echo json_encode($books); ?>;
