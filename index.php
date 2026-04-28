@@ -9,7 +9,7 @@ include 'koneksi.php';
 if (isset($_GET['hapus'])) {
     $id = $_GET['hapus'];    
     $stmt = mysqli_prepare($conn, "DELETE FROM databuku WHERE kode_buku = ?");
-    mysqli_stmt_bind_param($stmt, "s", $id);
+    mysqli_stmt_bind_param($stmt, "i", $id);
     mysqli_stmt_execute($stmt);
     header("Location: index.php");
 }
@@ -21,19 +21,58 @@ if (isset($_POST['proses_simpan'])) {
     $penulis = $_POST['penulis'];
     $tahun = $_POST['tahun'];
     $penerbit = $_POST['penerbit'];
-    $cover = $_POST['cover'];
+    $cover_url = $_POST['cover_url'];
     $deskripsi = $_POST['deskripsi'];
 
+    $cover_path_for_db = $_POST['cover_lama'] ?? ''; // Default ke path cover lama atau kosong
+
+    if (isset($_FILES['cover']) && $_FILES['cover']['error'] === UPLOAD_ERR_OK) { // Prioritas 1: Proses File Upload
+        $upload_dir = 'assets/';
+        if (!is_dir($upload_dir)) {
+            mkdir($upload_dir, 0755, true);
+        }
+
+        $file_name = uniqid() . '_' . basename($_FILES['cover']['name']);
+        $target_file = $upload_dir . $file_name;
+
+        // Validasi Ekstensi & Ukuran (Max 2MB, hanya JPG/PNG)
+        $allowed_types = ['image/jpeg', 'image/jpg', 'image/png'];
+        $max_size = 2 * 1024 * 1024; // 2MB dalam bytes
+
+        if (in_array($_FILES['cover']['type'], $allowed_types) && $_FILES['cover']['size'] <= $max_size) {
+            // Validasi tambahan (pastikan ini benar-benar file gambar)
+            $check = getimagesize($_FILES['cover']['tmp_name']);
+            if ($check !== false) {
+                if (move_uploaded_file($_FILES['cover']['tmp_name'], $target_file)) {
+                    $cover_path_for_db = $target_file; // Path baru untuk disimpan ke DB
+
+                    // Jika sedang edit & ada cover lama, hapus file lama untuk hemat storage
+                    if (!empty($_POST['cover_lama']) && file_exists($_POST['cover_lama'])) {
+                        unlink($_POST['cover_lama']);
+                    }
+                }
+            }
+        } else {
+            echo "<script>alert('Gagal: Format gambar harus JPG/PNG dan maksimal ukuran 2MB!'); window.history.back();</script>";
+            exit; // Hentikan proses simpan ke database jika file tidak memenuhi syarat
+        }
+    } else if (!empty($cover_url)) { // Prioritas 2: Gunakan URL jika tidak ada file di-upload
+        $cover_path_for_db = $cover_url;
+        // Jika cover lama adalah file lokal (bukan URL) dan URL baru diberikan, hapus file lama
+        if (!empty($_POST['cover_lama']) && file_exists($_POST['cover_lama']) && !filter_var($_POST['cover_lama'], FILTER_VALIDATE_URL)) {
+            unlink($_POST['cover_lama']);
+        }
+    }
+
     if ($id == "") {
-        // Logic Tambah Baru dengan Prepared Statement
-        $kode_baru = "B" . time();
-        $stmt = mysqli_prepare($conn, "INSERT INTO databuku (kode_buku, judul_buku, pengarang, penerbit, tahun_terbit, cover, deskripsi) VALUES (?, ?, ?, ?, ?, ?, ?)");
-        mysqli_stmt_bind_param($stmt, "ssssiss", $kode_baru, $judul, $penulis, $penerbit, $tahun, $cover, $deskripsi);
+        // Logic Tambah Baru (kode_buku di-handle oleh AUTO_INCREMENT)
+        $stmt = mysqli_prepare($conn, "INSERT INTO databuku (judul_buku, pengarang, penerbit, tahun_terbit, cover, deskripsi) VALUES (?, ?, ?, ?, ?, ?)");
+        mysqli_stmt_bind_param($stmt, "sssiss", $judul, $penulis, $penerbit, $tahun, $cover_path_for_db, $deskripsi);
         mysqli_stmt_execute($stmt);
     } else {
         // Logic Edit dengan Prepared Statement
         $stmt = mysqli_prepare($conn, "UPDATE databuku SET judul_buku=?, pengarang=?, tahun_terbit=?, penerbit=?, cover=?, deskripsi=? WHERE kode_buku=?");
-        mysqli_stmt_bind_param($stmt, "ssissss", $judul, $penulis, $tahun, $penerbit, $cover, $deskripsi, $id);
+        mysqli_stmt_bind_param($stmt, "ssisssi", $judul, $penulis, $tahun, $penerbit, $cover_path_for_db, $deskripsi, $id);
         mysqli_stmt_execute($stmt);
     }
     header("Location: index.php");
@@ -77,7 +116,7 @@ while ($row = mysqli_fetch_assoc($query)) {
             --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
         }
         * { box-sizing: border-box; }
-        body { font-family: 'Inter', sans-serif; background-color: var(--bg-body); color: var(--text-main); margin: 0; line-height: 1.6; display: flex; flex-direction: column; min-height: 100vh; }
+        body { font-family: 'Inter', sans-serif; background-color: var(--bg-body); color: var(--text-main); margin: 0; line-height: 1.6; display: flex; flex-direction: column; min-height: 100vh; overflow-x: hidden; }
         .container { max-width: 1000px; margin: 0 auto; padding: 40px 20px; flex: 1; }
         .hidden { display: none !important; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
@@ -140,6 +179,32 @@ while ($row = mysqli_fetch_assoc($query)) {
             color: var(--accent);
             font-weight: 600;
         }
+
+        /* ===== RESPONSIVE (MOBILE) ===== */
+        @media (max-width: 768px) {
+            .container { padding: 25px 15px; }
+            header h1 { font-size: 1.8rem; }
+            .toolbar { flex-direction: column; }
+            .btn { width: 100%; justify-content: center; }
+            
+            /* Mengubah Tabel Menjadi Tampilan Card di HP */
+            .card-table { background: transparent; border: none; overflow: visible; }
+            .card-table table, .card-table thead, .card-table tbody, .card-table th, .card-table td, .card-table tr { display: block; }
+            .card-table thead { display: none; }
+            .card-table tr { margin-bottom: 15px; background: var(--bg-card); border-radius: 14px; border: 1px solid var(--border); padding: 10px; }
+            .card-table td { display: flex; justify-content: space-between; align-items: center; padding: 12px 10px; border-bottom: 1px solid rgba(255,255,255,0.05); text-align: right; }
+            .card-table td:last-child { border-bottom: none; justify-content: center; padding-top: 15px; }
+            .card-table td::before { content: attr(data-label); font-weight: 700; color: var(--text-muted); text-transform: uppercase; font-size: 0.75rem; text-align: left; margin-right: 15px; }
+            .card-table td:last-child::before { display: none; }
+
+            .detail-card { flex-direction: column; padding: 25px 20px; gap: 25px; align-items: center; text-align: center; }
+            .cover-area { flex: auto; max-width: 220px; }
+            .meta-grid { grid-template-columns: 1fr; gap: 15px; text-align: left; }
+            .form-card { padding: 25px 15px; }
+            .form-grid { grid-template-columns: 1fr; }
+            .full-width { grid-column: span 1; }
+            .form-actions { flex-direction: column; }
+        }
     </style>
 </head>
 <body>
@@ -191,9 +256,10 @@ while ($row = mysqli_fetch_assoc($query)) {
             <div class="form-card">
                 <h2 id="formTitle" style="margin-top:0; color:var(--primary); margin-bottom: 25px;">Form Koleksi</h2>
                 
-                <form method="POST" action="index.php">
+                <form method="POST" action="index.php" enctype="multipart/form-data">
                     <div class="form-grid">
                         <input type="hidden" id="editId" name="editId">
+                        <input type="hidden" id="f_cover_lama" name="cover_lama">
                         <div class="form-group">
                             <label>Judul Buku</label>
                             <input type="text" id="f_judul" name="judul" required>
@@ -211,15 +277,21 @@ while ($row = mysqli_fetch_assoc($query)) {
                             <input type="text" id="f_penerbit" name="penerbit">
                         </div>
                         <div class="form-group full-width">
-                            <label>URL / Path Cover Buku (e.g. assets/buku.jpg)</label>
-                            <input type="text" id="f_cover" name="cover">
+                            <label>Upload Cover Buku</label>
+                            <img id="cover_preview" src="" alt="Preview Cover" style="max-width: 150px; border-radius: 8px; margin-bottom: 10px; display: none;">
+                            <input type="file" id="f_cover" name="cover" accept=".jpg, .jpeg, .png">
+                            <small style="color: var(--text-muted); font-size: 0.75rem;">Kosongkan jika tidak ingin mengubah cover.</small>
+                        </div>
+                        <div class="form-group full-width">
+                            <label>Atau masukkan URL Cover</label>
+                            <input type="text" id="f_cover_url" name="cover_url" placeholder="https://example.com/cover.jpg">
                         </div>
                         <div class="form-group full-width">
                             <label>Sinopsis / Deskripsi</label>
                             <textarea id="f_deskripsi" name="deskripsi" rows="5"></textarea>
                         </div>
                     </div>
-                    <div style="margin-top: 30px; display: flex; gap: 12px;">
+                <div class="form-actions" style="margin-top: 30px; display: flex; gap: 12px;">
                         <button type="submit" name="proses_simpan" class="btn btn-primary">Simpan ke Database</button>
                         <button type="button" class="btn btn-outline" onclick="gantiHalaman('view-list')">Batal</button>
                     </div>
@@ -248,12 +320,12 @@ while ($row = mysqli_fetch_assoc($query)) {
             const tbody = document.getElementById('isiTabel');
             tbody.innerHTML = daftarBuku.map((b, i) => `
                 <tr>
-                    <td>${i+1}</td>
-                    <td><span class="book-link" onclick="tampilkanDetail('${b.id}')">${b.judul}</span></td>
-                    <td>${b.penulis}</td>
-                    <td>${b.tahun}</td>
-                    <td><span class="badge">${b.penerbit}</span></td>
-                    <td style="text-align:center;">
+                    <td data-label="No">${i+1}</td>
+                    <td data-label="Judul Buku"><span class="book-link" onclick="tampilkanDetail('${b.id}')">${b.judul}</span></td>
+                    <td data-label="Penulis">${b.penulis}</td>
+                    <td data-label="Tahun">${b.tahun}</td>
+                    <td data-label="Penerbit"><span class="badge">${b.penerbit}</span></td>
+                    <td data-label="Aksi" style="text-align:center;">
                         <button class="btn-icon" onclick="bukaForm('${b.id}')">✎</button>
                         <button class="btn-icon" onclick="hapusBuku('${b.id}')">🗑</button>
                     </td>
@@ -282,16 +354,77 @@ while ($row = mysqli_fetch_assoc($query)) {
 
         function bukaForm(id = null) {
             const b = daftarBuku.find(x => x.id === id);
+            const coverPreview = document.getElementById('cover_preview');
+
             document.getElementById('formTitle').innerText = id ? "Edit Koleksi" : "Tambah Koleksi";
             document.getElementById('editId').value = id || "";
             document.getElementById('f_judul').value = b ? b.judul : "";
             document.getElementById('f_penulis').value = b ? b.penulis : "";
             document.getElementById('f_tahun').value = b ? b.tahun : "";
             document.getElementById('f_penerbit').value = b ? b.penerbit : "";
-            document.getElementById('f_cover').value = b ? b.cover : "";
+
+            // Handle cover preview dan path lama
+            document.getElementById('f_cover_lama').value = b ? b.cover : "";
+            const coverUrlInput = document.getElementById('f_cover_url');
+
+            if (b && b.cover) { // Jika ada data cover
+                coverPreview.src = b.cover;
+                coverPreview.style.display = 'block';
+                // Cek apakah cover adalah URL, jika ya, isikan ke input URL
+                if (b.cover.startsWith('http')) {
+                    coverUrlInput.value = b.cover;
+                } else {
+                    coverUrlInput.value = "";
+                }
+            } else {
+                coverPreview.style.display = 'none';
+                coverUrlInput.value = "";
+            }
+            document.getElementById('f_cover').value = ""; // Reset input file
+
             document.getElementById('f_deskripsi').value = b ? b.deskripsi : "";
             gantiHalaman('view-form');
         }
+
+        // Validasi input file di sisi klien (browser) & Live Preview
+        document.getElementById('f_cover').addEventListener('change', function() {
+            const file = this.files[0];
+            if (file) {
+                if (file.size > 2 * 1024 * 1024) { // 2MB
+                    alert('Ukuran file maksimal 2MB!');
+                    this.value = ""; // Reset input form
+                    return;
+                }
+                const allowedTypes = ['image/jpeg', 'image/png'];
+                if (!allowedTypes.includes(file.type)) {
+                    alert('Format file hanya boleh JPG atau PNG!');
+                    this.value = ""; // Reset input form
+                    return;
+                }
+                
+                // Menampilkan preview gambar yang baru dipilih secara live
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    const preview = document.getElementById('cover_preview');
+                    preview.src = e.target.result;
+                    preview.style.display = 'block';
+                }
+                reader.readAsDataURL(file);
+            }
+        });
+
+        // Live preview saat pengguna mengetik di input URL
+        document.getElementById('f_cover_url').addEventListener('input', function() {
+            const url = this.value;
+            const preview = document.getElementById('cover_preview');
+            if (url) {
+                preview.src = url;
+                preview.style.display = 'block';
+            } else if (!document.getElementById('f_cover').files[0]) {
+                // Sembunyikan preview hanya jika input file juga kosong
+                preview.style.display = 'none';
+            }
+        });
 
         function hapusBuku(id) {
             if(confirm("Hapus buku?")) window.location.href = "index.php?hapus=" + id;
