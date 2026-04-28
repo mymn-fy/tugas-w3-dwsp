@@ -5,6 +5,21 @@ function gantiHalaman(id) {
 
 function renderTabel() {
     const tbody = document.getElementById('isiTabel');
+    
+    // Jika tidak ada data buku
+    if (daftarBuku.length === 0) {
+        tbody.innerHTML = `
+            <tr>
+                <td colspan="6" class="empty-state-cell">
+                    <div class="empty-icon">📚</div>
+                    <h3 class="empty-title">Tidak Ada Data Ditemukan</h3>
+                    <p class="empty-desc">Belum ada koleksi buku di sini atau kata kunci pencarian Anda tidak cocok.</p>
+                </td>
+            </tr>
+        `;
+        return; // Hentikan fungsi sampai di sini
+    }
+
     tbody.innerHTML = daftarBuku.map((b, i) => `
         <tr>
             <td data-label="No">${i+1}</td>
@@ -118,6 +133,15 @@ let bookIdToDelete = null;
 function hapusBuku(id) {
     bookIdToDelete = id;
     document.getElementById('deleteModal').classList.add('active');
+}
+
+function konfirmasiLogout(e) {
+    if (e) e.preventDefault(); // Mencegah browser berpindah ke href="#"
+    document.getElementById('logoutModal').classList.add('active');
+}
+
+function closeLogoutModal() {
+    document.getElementById('logoutModal').classList.remove('active');
 }
 
 function closeDeleteModal() {

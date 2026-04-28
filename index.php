@@ -33,7 +33,7 @@ if (!isset($_SESSION['is_logged_in']) || $_SESSION['is_logged_in'] !== true) {
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Login Admin - Perpustakaan BSI</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="style.css?v=<?php echo time(); ?>">
     <script>
         const savedTheme = localStorage.getItem('theme') || 'dark';
         document.documentElement.setAttribute('data-theme', savedTheme);
@@ -201,6 +201,14 @@ mysqli_stmt_execute($stmt_count);
 $total_books = mysqli_fetch_assoc(mysqli_stmt_get_result($stmt_count))['total'];
 $total_pages = ceil($total_books / $items_per_page);
 
+// Hitung statistik tambahan untuk dashboard
+$author_query = mysqli_query($conn, "SELECT COUNT(DISTINCT pengarang) AS total_author FROM databuku");
+$total_authors = mysqli_fetch_assoc($author_query)['total_author'] ?? 0;
+
+$year_query = mysqli_query($conn, "SELECT MAX(tahun_terbit) AS newest_year FROM databuku");
+$newest_year = mysqli_fetch_assoc($year_query)['newest_year'] ?? '-';
+
+
 // Eksekusi query untuk data buku
 $stmt_data = mysqli_prepare($conn, $data_sql);
 if (!empty($types)) mysqli_stmt_bind_param($stmt_data, $types, ...$params);
@@ -227,7 +235,7 @@ while ($row = mysqli_fetch_assoc($query)) {
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Sistem Informasi Perpustakaan BSI</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="style.css?v=<?php echo time(); ?>">
     <script>
         const savedTheme = localStorage.getItem('theme') || 'dark';
         document.documentElement.setAttribute('data-theme', savedTheme);
@@ -245,12 +253,44 @@ while ($row = mysqli_fetch_assoc($query)) {
                 <button id="themeToggle" class="btn btn-outline" style="padding: 10px; border-radius: 50%; width: 42px; height: 42px;" title="Ganti Mode">
                     <span id="themeIcon">☀️</span>
                 </button>
-                <a href="?logout=true" class="btn btn-outline" style="text-decoration:none; color: var(--danger); border-color: rgba(239, 68, 68, 0.4);" onclick="return confirm('Yakin ingin keluar?')">Keluar</a>
+                <a href="#" class="btn btn-outline" style="text-decoration:none; color: var(--danger); border-color: rgba(239, 68, 68, 0.4);" onclick="konfirmasiLogout(event)">Keluar</a>
             </div>
         </header>
 
         <!-- HALAMAN DAFTAR -->
         <section id="view-list" class="animate">
+            
+            <!-- DASHBOARD STATISTIK RINGKAS -->
+            <div class="dashboard-card">
+                <div class="dashboard-header">
+                    <h2 class="dashboard-title">Dashboard Statistik</h2>
+                    <a href="?export=csv" class="btn btn-primary" style="padding: 8px 15px; font-size: 0.85rem; border-radius: 8px;">📥 Export Excel (CSV)</a>
+                </div>
+                <div class="stats-grid">
+                    <div class="stat-capsule">
+                        <div class="stat-icon">📚</div>
+                        <div class="stat-info">
+                            <div class="stat-title">Total Koleksi</div>
+                            <div class="stat-value"><?php echo $total_books; ?> <span>Buku</span></div>
+                        </div>
+                    </div>
+                    <div class="stat-capsule">
+                        <div class="stat-icon">✍️</div>
+                        <div class="stat-info">
+                            <div class="stat-title">Penulis Unik</div>
+                            <div class="stat-value"><?php echo $total_authors; ?> <span>Orang</span></div>
+                        </div>
+                    </div>
+                    <div class="stat-capsule">
+                        <div class="stat-icon">✨</div>
+                        <div class="stat-info">
+                            <div class="stat-title">Tahun Terbaru</div>
+                            <div class="stat-value"><?php echo $newest_year; ?></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
             <form action="index.php" method="GET">
                 <div class="toolbar">
                     <div class="search-box">
@@ -378,6 +418,18 @@ while ($row = mysqli_fetch_assoc($query)) {
             <div style="display: flex; gap: 10px; justify-content: center;">
                 <button class="btn btn-outline" onclick="closeDeleteModal()">Batal</button>
                 <button class="btn btn-danger" id="confirmDeleteBtn">Ya, Hapus Buku</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL KONFIRMASI KELUAR -->
+    <div class="modal-overlay" id="logoutModal">
+        <div class="modal-box">
+            <h3 style="margin: 0; color: var(--text-main);">Konfirmasi Keluar</h3>
+            <div class="modal-body">Apakah Anda yakin ingin mengakhiri sesi dan keluar dari sistem?</div>
+            <div style="display: flex; gap: 10px; justify-content: center;">
+                <button class="btn btn-outline" onclick="closeLogoutModal()">Batal</button>
+                <a href="?logout=true" class="btn btn-danger" style="text-decoration: none;">Ya, Keluar</a>
             </div>
         </div>
     </div>
