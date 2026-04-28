@@ -1,4 +1,8 @@
 <?php
+// Tampilkan error sementara untuk debugging (Hapus 2 baris ini jika web sudah berjalan normal)
+ini_set('display_errors', 1);
+error_reporting(E_ALL);
+
 include 'koneksi.php';
 
 // 1. Logika HAPUS data
@@ -40,12 +44,12 @@ $query = mysqli_query($conn, "SELECT * FROM DataBuku ORDER BY kode_buku DESC");
 $books = [];
 while ($row = mysqli_fetch_assoc($query)) {
     $books[] = [
-        'id'       => htmlspecialchars($row['kode_buku']),
-        'judul'    => htmlspecialchars($row['judul_buku']),
-        'penulis'  => htmlspecialchars($row['pengarang']),
-        'tahun'    => htmlspecialchars($row['tahun_terbit']),
-        'penerbit' => htmlspecialchars($row['penerbit']),
-        'deskripsi'=> htmlspecialchars($row['deskripsi']),
+        'id'       => htmlspecialchars($row['kode_buku'] ?? ''),
+        'judul'    => htmlspecialchars($row['judul_buku'] ?? ''),
+        'penulis'  => htmlspecialchars($row['pengarang'] ?? ''),
+        'tahun'    => htmlspecialchars($row['tahun_terbit'] ?? ''),
+        'penerbit' => htmlspecialchars($row['penerbit'] ?? ''),
+        'deskripsi'=> htmlspecialchars($row['deskripsi'] ?? ''),
         'cover'    => $row['cover'] ? htmlspecialchars($row['cover']) : 'assets/default.jpg'
     ];
 }
