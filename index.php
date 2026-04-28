@@ -8,7 +8,7 @@ include 'koneksi.php';
 // 1. Logika HAPUS data
 if (isset($_GET['hapus'])) {
     $id = $_GET['hapus'];    
-    $stmt = mysqli_prepare($conn, "DELETE FROM DataBuku WHERE kode_buku = ?");
+    $stmt = mysqli_prepare($conn, "DELETE FROM databuku WHERE kode_buku = ?");
     mysqli_stmt_bind_param($stmt, "s", $id);
     mysqli_stmt_execute($stmt);
     header("Location: index.php");
@@ -27,12 +27,12 @@ if (isset($_POST['proses_simpan'])) {
     if ($id == "") {
         // Logic Tambah Baru dengan Prepared Statement
         $kode_baru = "B" . time();
-        $stmt = mysqli_prepare($conn, "INSERT INTO DataBuku (kode_buku, judul_buku, pengarang, penerbit, tahun_terbit, cover, deskripsi) VALUES (?, ?, ?, ?, ?, ?, ?)");
+        $stmt = mysqli_prepare($conn, "INSERT INTO databuku (kode_buku, judul_buku, pengarang, penerbit, tahun_terbit, cover, deskripsi) VALUES (?, ?, ?, ?, ?, ?, ?)");
         mysqli_stmt_bind_param($stmt, "ssssiss", $kode_baru, $judul, $penulis, $penerbit, $tahun, $cover, $deskripsi);
         mysqli_stmt_execute($stmt);
     } else {
         // Logic Edit dengan Prepared Statement
-        $stmt = mysqli_prepare($conn, "UPDATE DataBuku SET judul_buku=?, pengarang=?, tahun_terbit=?, penerbit=?, cover=?, deskripsi=? WHERE kode_buku=?");
+        $stmt = mysqli_prepare($conn, "UPDATE databuku SET judul_buku=?, pengarang=?, tahun_terbit=?, penerbit=?, cover=?, deskripsi=? WHERE kode_buku=?");
         mysqli_stmt_bind_param($stmt, "ssissss", $judul, $penulis, $tahun, $penerbit, $cover, $deskripsi, $id);
         mysqli_stmt_execute($stmt);
     }
@@ -40,7 +40,7 @@ if (isset($_POST['proses_simpan'])) {
 }
 
 // 3. Ambil data
-$query = mysqli_query($conn, "SELECT * FROM DataBuku ORDER BY kode_buku DESC");
+$query = mysqli_query($conn, "SELECT * FROM databuku ORDER BY kode_buku DESC");
 $books = [];
 while ($row = mysqli_fetch_assoc($query)) {
     $books[] = [
