@@ -84,15 +84,43 @@ $items_per_page = 10;
 $current_page = isset($_GET['page']) ? (int)$_GET['page'] : 1;
 if ($current_page < 1) $current_page = 1;
 
+$search_term = $_GET['search'] ?? '';
+$search_query_string = !empty($search_term) ? '&search=' . urlencode($search_term) : '';
+
 $offset = ($current_page - 1) * $items_per_page;
 
-// Hitung total buku untuk paginasi
-$total_books_query = mysqli_query($conn, "SELECT COUNT(*) AS total FROM databuku");
-$total_books_row = mysqli_fetch_assoc($total_books_query);
-$total_books = $total_books_row['total'];
+// Menyiapkan query untuk total buku dan data buku dengan atau tanpa pencarian
+$count_sql = "SELECT COUNT(*) AS total FROM databuku";
+$data_sql = "SELECT * FROM databuku";
+$params = [];
+$types = "";
+
+if (!empty($search_term)) {
+    $search_like = "%{$search_term}%";
+    $where_clause = " WHERE judul_buku LIKE ? OR pengarang LIKE ? OR penerbit LIKE ?";
+    $count_sql .= $where_clause;
+    $data_sql .= $where_clause;
+    $params = [$search_like, $search_like, $search_like];
+    $types = "sss";
+}
+
+$data_sql .= " ORDER BY kode_buku DESC LIMIT ? OFFSET ?";
+$params[] = $items_per_page;
+$params[] = $offset;
+$types .= "ii";
+
+// Eksekusi query untuk total buku
+$stmt_count = mysqli_prepare($conn, $count_sql);
+if (!empty($search_term)) mysqli_stmt_bind_param($stmt_count, "sss", ...array_slice($params, 0, 3));
+mysqli_stmt_execute($stmt_count);
+$total_books = mysqli_fetch_assoc(mysqli_stmt_get_result($stmt_count))['total'];
 $total_pages = ceil($total_books / $items_per_page);
 
-$query = mysqli_query($conn, "SELECT * FROM databuku ORDER BY kode_buku DESC LIMIT $items_per_page OFFSET $offset");
+// Eksekusi query untuk data buku
+$stmt_data = mysqli_prepare($conn, $data_sql);
+if (!empty($types)) mysqli_stmt_bind_param($stmt_data, $types, ...$params);
+mysqli_stmt_execute($stmt_data);
+$query = mysqli_stmt_get_result($stmt_data);
 $books = [];
 while ($row = mysqli_fetch_assoc($query)) {
     $books[] = [
@@ -263,12 +291,14 @@ while ($row = mysqli_fetch_assoc($query)) {
 
         <!-- HALAMAN DAFTAR -->
         <section id="view-list" class="animate">
-            <div class="toolbar">
-                <div class="search-box">
-                    <input type="text" id="inputPencarian" placeholder="Cari buku..." onkeyup="handleSearchKey(event)">
+            <form action="index.php" method="GET">
+                <div class="toolbar">
+                    <div class="search-box">
+                        <input type="text" name="search" placeholder="Cari berdasarkan judul, penulis, penerbit..." value="<?php echo htmlspecialchars($search_term); ?>">
+                    </div>
+                    <button type="submit" class="btn btn-primary">Cari</button>
                 </div>
-                <button class="btn btn-primary" onclick="filterTabel()">Cari</button>
-            </div>
+            </form>
 
             <div class="card-table">
                 <table>
@@ -293,19 +323,19 @@ while ($row = mysqli_fetch_assoc($query)) {
             <!-- Paginasi -->
             <div class="pagination">
                 <?php if ($current_page > 1): ?>
-                    <a href="?page=<?php echo $current_page - 1; ?>">Previous</a>
+                    <a href="?page=<?php echo $current_page - 1; ?><?php echo $search_query_string; ?>">Previous</a>
                 <?php endif; ?>
 
                 <?php for ($i = 1; $i <= $total_pages; $i++): ?>
                     <?php if ($i == $current_page): ?>
                         <span class="current-page"><?php echo $i; ?></span>
                     <?php else: ?>
-                        <a href="?page=<?php echo $i; ?>"><?php echo $i; ?></a>
+                        <a href="?page=<?php echo $i; ?><?php echo $search_query_string; ?>"><?php echo $i; ?></a>
                     <?php endif; ?>
                 <?php endfor; ?>
 
                 <?php if ($current_page < $total_pages): ?>
-                    <a href="?page=<?php echo $current_page + 1; ?>">Next</a>
+                    <a href="?page=<?php echo $current_page + 1; ?><?php echo $search_query_string; ?>">Next</a>
                 <?php endif; ?>
             </div>
 
@@ -497,14 +527,6 @@ while ($row = mysqli_fetch_assoc($query)) {
         function hapusBuku(id) {
             if(confirm("Hapus buku?")) window.location.href = "index.php?hapus=" + id;
         }
-
-        function filterTabel() {
-            const key = document.getElementById('inputPencarian').value.toLowerCase();
-            const rows = document.querySelectorAll('#isiTabel tr');
-            rows.forEach(r => r.style.display = r.innerText.toLowerCase().includes(key) ? '' : 'none');
-        }
-
-        function handleSearchKey(e) { if(e.key === "Enter") filterTabel(); }
 
         renderTabel();
     </script>
