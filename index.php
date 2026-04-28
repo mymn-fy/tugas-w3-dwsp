@@ -33,6 +33,7 @@ if (!isset($_SESSION['is_logged_in']) || $_SESSION['is_logged_in'] !== true) {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Login Admin - Perpustakaan BSI</title>
+    <link rel="icon" href="assets/globe_book.svg" type="image/svg+xml">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="style.css?v=<?php echo time(); ?>">
     <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet" />
@@ -236,6 +237,7 @@ while ($row = mysqli_fetch_assoc($query)) {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Sistem Informasi Perpustakaan BSI</title>
+    <link rel="icon" href="assets/globe_book.svg" type="image/svg+xml">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="style.css?v=<?php echo time(); ?>">
     <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet" />
