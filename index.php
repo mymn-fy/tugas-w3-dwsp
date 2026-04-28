@@ -1,7 +1,74 @@
 <?php
+session_start();
+
 // Tampilkan error sementara untuk debugging (Hapus 2 baris ini jika web sudah berjalan normal)
 ini_set('display_errors', 1);
 error_reporting(E_ALL);
+
+// --- LOGIKA LOGIN & LOGOUT ---
+if (isset($_GET['logout'])) {
+    session_destroy();
+    header("Location: index.php");
+    exit;
+}
+
+$login_error = '';
+if (isset($_POST['proses_login'])) {
+    if ($_POST['username'] === 'perpusbsi' && $_POST['password'] === 'admin100') {
+        $_SESSION['is_logged_in'] = true;
+        header("Location: index.php");
+        exit;
+    } else {
+        $login_error = "Username atau password salah!";
+    }
+}
+
+// Jika belum login, tampilkan halaman login saja dan hentikan skrip
+if (!isset($_SESSION['is_logged_in']) || $_SESSION['is_logged_in'] !== true) {
+?>
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login Admin - Perpustakaan BSI</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+    <script>
+        const savedTheme = localStorage.getItem('theme') || 'dark';
+        document.documentElement.setAttribute('data-theme', savedTheme);
+    </script>
+    <style>
+        .login-wrapper { max-width: 400px; margin: 10vh auto; }
+        .error-alert { background: rgba(239,68,68,0.1); color: var(--danger); padding: 12px; border-radius: 8px; margin-bottom: 20px; text-align: center; font-size: 0.9rem; border: 1px solid rgba(239,68,68,0.2); }
+    </style>
+</head>
+<body>
+    <div class="container login-wrapper animate">
+        <header>
+            <h1 style="font-size: 1.8rem;">Sistem Perpustakaan</h1>
+            <p>Silakan masuk untuk mengelola data</p>
+        </header>
+        <div class="form-card">
+            <?php if ($login_error) echo "<div class='error-alert'>$login_error</div>"; ?>
+            <form method="POST" action="index.php">
+                <div class="form-group" style="margin-bottom: 15px;">
+                    <label>Username</label>
+                    <input type="text" name="username" required autofocus autocomplete="off">
+                </div>
+                <div class="form-group" style="margin-bottom: 25px;">
+                    <label>Password</label>
+                    <input type="password" name="password" required>
+                </div>
+                <button type="submit" name="proses_login" class="btn btn-primary" style="width: 100%;">Masuk ke Dasbor</button>
+            </form>
+        </div>
+    </div>
+</body>
+</html>
+<?php
+    exit; // Menghentikan loading HTML & Database utama jika belum login
+}
 
 include 'koneksi.php';
 
@@ -11,7 +78,9 @@ if (isset($_GET['hapus'])) {
     $stmt = mysqli_prepare($conn, "DELETE FROM databuku WHERE kode_buku = ?");
     mysqli_stmt_bind_param($stmt, "i", $id);
     mysqli_stmt_execute($stmt);
+    $_SESSION['flash_msg'] = "Koleksi buku berhasil dihapus!";
     header("Location: index.php");
+    exit;
 }
 
 // 2. Logika SIMPAN (Tambah Baru atau Edit)
@@ -78,6 +147,10 @@ if (isset($_POST['proses_simpan'])) {
     header("Location: index.php");
 }
 
+// Tangkap pesan flash jika ada, lalu segera hapus dari sesi
+$flash_message = $_SESSION['flash_msg'] ?? '';
+unset($_SESSION['flash_msg']);
+
 // 3. Ambil data
 // Logika Paginasi
 $items_per_page = 10;
@@ -85,7 +158,9 @@ $current_page = isset($_GET['page']) ? (int)$_GET['page'] : 1;
 if ($current_page < 1) $current_page = 1;
 
 $search_term = $_GET['search'] ?? '';
+$sort_option = $_GET['sort'] ?? 'default';
 $search_query_string = !empty($search_term) ? '&search=' . urlencode($search_term) : '';
+$search_query_string .= $sort_option !== 'default' ? '&sort=' . urlencode($sort_option) : '';
 
 $offset = ($current_page - 1) * $items_per_page;
 
@@ -104,7 +179,17 @@ if (!empty($search_term)) {
     $types = "sss";
 }
 
-$data_sql .= " ORDER BY kode_buku DESC LIMIT ? OFFSET ?";
+// Logika Pengurutan
+$order_clause = "kode_buku DESC"; // Default: Buku yang baru ditambahkan
+if ($sort_option === 'tahun_terbaru') {
+    $order_clause = "tahun_terbit DESC, kode_buku DESC";
+} elseif ($sort_option === 'tahun_terlama') {
+    $order_clause = "tahun_terbit ASC, kode_buku DESC";
+} elseif ($sort_option === 'abjad_az') {
+    $order_clause = "judul_buku ASC";
+}
+
+$data_sql .= " ORDER BY {$order_clause} LIMIT ? OFFSET ?";
 $params[] = $items_per_page;
 $params[] = $offset;
 $types .= "ii";
@@ -130,7 +215,7 @@ while ($row = mysqli_fetch_assoc($query)) {
         'tahun'    => htmlspecialchars($row['tahun_terbit'] ?? ''),
         'penerbit' => htmlspecialchars($row['penerbit'] ?? ''),
         'deskripsi'=> htmlspecialchars($row['deskripsi'] ?? ''),
-        'cover'    => $row['cover'] ? htmlspecialchars($row['cover']) : 'assets/default.jpg'
+        'cover'    => !empty($row['cover']) ? htmlspecialchars($row['cover']) : 'assets/nobook.png'
     ];
 }
 ?>
@@ -142,151 +227,26 @@ while ($row = mysqli_fetch_assoc($query)) {
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Sistem Informasi Perpustakaan BSI</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
-    
-    <style>
-        :root {
-            --bg-body: #0f172a;
-            --bg-card: #1e293b;
-            --primary: #48a39e;
-            --primary-hover: #367c78;
-            --accent: #F2AB3B;
-            --text-main: #f8fafc;
-            --text-muted: #94a3b8;
-            --danger: #ef4444;
-            --border: rgba(255, 255, 255, 0.08);
-            --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-        }
-        * { box-sizing: border-box; }
-        body { font-family: 'Inter', sans-serif; background-color: var(--bg-body); color: var(--text-main); margin: 0; line-height: 1.6; display: flex; flex-direction: column; min-height: 100vh; overflow-x: hidden; }
-        .container { max-width: 1000px; margin: 0 auto; padding: 40px 20px; flex: 1; }
-        .hidden { display: none !important; }
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
-        .animate { animation: fadeIn 0.4s ease forwards; }
-        header { text-align: center; margin-bottom: 40px; }
-        header h1 { font-size: 2.2rem; font-weight: 800; color: var(--primary); margin: 0; }
-        header p { color: var(--text-muted); margin-top: 8px; font-size: 0.95rem; }
-        .toolbar { display: flex; gap: 10px; margin-bottom: 20px; background: var(--bg-card); padding: 10px; border-radius: 14px; border: 1px solid var(--border); }
-        .search-box { flex: 1; }
-        .search-box input { width: 100%; background: #0f172a; border: 1px solid var(--border); padding: 12px 18px; border-radius: 10px; color: white; font-size: 0.95rem; }
-        .btn { padding: 12px 24px; border-radius: 10px; font-weight: 600; cursor: pointer; transition: var(--transition); border: none; display: inline-flex; align-items: center; justify-content: center; gap: 8px; }
-        .btn-primary { background: var(--primary); color: #fff; }
-        .btn-outline { background: transparent; border: 1px solid var(--border); color: var(--text-main); }
-        .card-table { background: var(--bg-card); border-radius: 18px; border: 1px solid var(--border); overflow: hidden; }
-        table { width: 100%; border-collapse: collapse; }
-        th { background: rgba(72, 163, 158, 0.1); padding: 18px 20px; color: var(--primary); font-size: 0.8rem; text-transform: uppercase; text-align: left; border-bottom: 1px solid var(--border); }
-        td { padding: 16px 20px; border-bottom: 1px solid var(--border); font-size: 0.9rem; }
-        .book-link { color: var(--text-main); font-weight: 600; text-decoration: none; cursor: pointer; }
-        .badge { background: rgba(72, 163, 158, 0.15); color: var(--primary); padding: 4px 10px; border-radius: 6px; font-size: 0.75rem; font-weight: 700; }
-        .detail-card { background: var(--bg-card); padding: 40px; border-radius: 20px; border: 1px solid var(--border); display: flex; gap: 40px; }
-        .cover-area { flex: 0 0 240px; }
-        .cover-area img { width: 100%; border-radius: 12px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
-        .meta-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
-        .meta-label { color: var(--text-muted); font-size: 0.7rem; text-transform: uppercase; font-weight: 700; display: block; margin-bottom: 4px; }
-        .form-card { background: var(--bg-card); padding: 35px; border-radius: 20px; border: 1px solid var(--border); }
-        .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
-        .full-width { grid-column: span 2; }
-        .form-group { display: flex; flex-direction: column; gap: 6px; }
-        .form-group label { font-size: 0.85rem; color: var(--text-muted); }
-        .form-group input, .form-group textarea { background: #0f172a; border: 1px solid var(--border); padding: 12px; border-radius: 10px; color: white; }
-        .btn-icon { background: rgba(255,255,255,0.05); border: none; cursor: pointer; padding: 10px; border-radius: 8px; color: var(--text-muted); margin-left: 5px; }
-
-        /* ===== FOOTER ===== */
-        footer {
-            background: var(--bg-card);
-            border-top: 1px solid var(--border);
-            margin-top: 60px;
-            padding: 28px 20px;
-            text-align: center;
-        }
-        .footer-inner {
-            max-width: 1000px;
-            margin: 0 auto;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            gap: 6px;
-        }
-        .footer-brand {
-            font-size: 0.95rem;
-            font-weight: 700;
-            color: var(--primary);
-            letter-spacing: 0.03em;
-        }
-        .footer-copy {
-            font-size: 0.8rem;
-            color: var(--text-muted);
-        }
-        .footer-copy span {
-            color: var(--accent);
-            font-weight: 600;
-        }
-
-        /* ===== RESPONSIVE (MOBILE) ===== */
-        @media (max-width: 768px) {
-            .container { padding: 25px 15px; }
-            header h1 { font-size: 1.8rem; }
-            .toolbar { flex-direction: column; }
-            .btn { width: 100%; justify-content: center; }
-            
-            /* Mengubah Tabel Menjadi Tampilan Card di HP */
-            .card-table { background: transparent; border: none; overflow: visible; }
-            .card-table table, .card-table thead, .card-table tbody, .card-table th, .card-table td, .card-table tr { display: block; }
-            .card-table thead { display: none; }
-            .card-table tr { margin-bottom: 15px; background: var(--bg-card); border-radius: 14px; border: 1px solid var(--border); padding: 10px; }
-            .card-table td { display: flex; justify-content: space-between; align-items: center; padding: 12px 10px; border-bottom: 1px solid rgba(255,255,255,0.05); text-align: right; }
-            .card-table td:last-child { border-bottom: none; justify-content: center; padding-top: 15px; }
-            .card-table td::before { content: attr(data-label); font-weight: 700; color: var(--text-muted); text-transform: uppercase; font-size: 0.75rem; text-align: left; margin-right: 15px; }
-            .card-table td:last-child::before { display: none; }
-
-            .detail-card { flex-direction: column; padding: 25px 20px; gap: 25px; align-items: center; text-align: center; }
-            .cover-area { flex: auto; max-width: 220px; }
-            .meta-grid { grid-template-columns: 1fr; gap: 15px; text-align: left; }
-            .form-card { padding: 25px 15px; }
-            .form-grid { grid-template-columns: 1fr; }
-            .full-width { grid-column: span 1; }
-            .form-actions { flex-direction: column; }
-
-            /* Paginasi Responsif */
-            .pagination { flex-wrap: wrap; justify-content: center; }
-            .pagination a, .pagination span {
-                padding: 8px 12px;
-                margin: 5px;
-            }
-        }
-
-        /* Paginasi */
-        .pagination {
-            display: flex;
-            justify-content: center;
-            margin-top: 30px;
-            gap: 5px;
-        }
-        .pagination a, .pagination span {
-            padding: 10px 15px;
-            border-radius: 8px;
-            text-decoration: none;
-            color: var(--text-main);
-            background-color: var(--bg-card);
-            border: 1px solid var(--border);
-            transition: var(--transition);
-        }
-        .pagination a:hover {
-            background-color: var(--primary);
-            color: #fff;
-        }
-        .pagination .current-page {
-            background-color: var(--primary);
-            color: #fff;
-            font-weight: bold;
-        }
-    </style>
+    <link rel="stylesheet" href="style.css">
+    <script>
+        const savedTheme = localStorage.getItem('theme') || 'dark';
+        document.documentElement.setAttribute('data-theme', savedTheme);
+    </script>
 </head>
 <body>
 
     <div class="container">
-        <header>
-            <h1>Sistem Perpustakaan BSI</h1>
-            <p>Katalog Digital Literasi BSI</p>
+        <header style="display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; text-align: left; gap: 15px;">
+            <div>
+                <h1>Sistem Perpustakaan BSI</h1>
+                <p style="margin-top: 8px; margin-bottom: 0;">Katalog Digital Literasi BSI</p>
+            </div>
+            <div style="display: flex; gap: 10px; align-items: center;">
+                <button id="themeToggle" class="btn btn-outline" style="padding: 10px; border-radius: 50%; width: 42px; height: 42px;" title="Ganti Mode">
+                    <span id="themeIcon">☀️</span>
+                </button>
+                <a href="?logout=true" class="btn btn-outline" style="text-decoration:none; color: var(--danger); border-color: rgba(239, 68, 68, 0.4);" onclick="return confirm('Yakin ingin keluar?')">Keluar</a>
+            </div>
         </header>
 
         <!-- HALAMAN DAFTAR -->
@@ -296,6 +256,12 @@ while ($row = mysqli_fetch_assoc($query)) {
                     <div class="search-box">
                         <input type="text" name="search" placeholder="Cari berdasarkan judul, penulis, penerbit..." value="<?php echo htmlspecialchars($search_term); ?>">
                     </div>
+                    <select name="sort" class="form-select" onchange="this.form.submit()">
+                        <option value="default" <?php echo $sort_option == 'default' ? 'selected' : ''; ?>>Urutkan: Baru Ditambahkan</option>
+                        <option value="tahun_terbaru" <?php echo $sort_option == 'tahun_terbaru' ? 'selected' : ''; ?>>Urutkan: Tahun Terbaru</option>
+                        <option value="tahun_terlama" <?php echo $sort_option == 'tahun_terlama' ? 'selected' : ''; ?>>Urutkan: Tahun Terlama</option>
+                        <option value="abjad_az" <?php echo $sort_option == 'abjad_az' ? 'selected' : ''; ?>>Urutkan: Abjad Judul (A-Z)</option>
+                    </select>
                     <button type="submit" class="btn btn-primary">Cari</button>
                 </div>
             </form>
@@ -399,136 +365,35 @@ while ($row = mysqli_fetch_assoc($query)) {
     <!-- FOOTER (di luar .container agar full-width) -->
     <footer>
         <div class="footer-inner">
-            <div class="footer-brand">BSI Digital Library</div>
-            <div class="footer-copy">&copy; 2026 &mdash; Dikembangkan oleh <span>Min</span>.</div>
+            <div class="footer-brand">Sistem Perpustakaan BSI</div>
+            <div class="footer-copy">&copy; 2026 &mdash; Dikembangkan oleh <span><a href="https://github.com/mymn-fy/tugas-w3-dwsp" target="_blank" style="color: inherit; text-decoration: none;">Min</a></span>.</div>
         </div>
     </footer>
+
+    <!-- MODAL KONFIRMASI HAPUS -->
+    <div class="modal-overlay" id="deleteModal">
+        <div class="modal-box">
+            <h3 style="margin: 0; color: var(--text-main);">Konfirmasi Hapus</h3>
+            <div class="modal-body">Apakah Anda yakin ingin menghapus buku ini? Data yang dihapus tidak dapat dikembalikan.</div>
+            <div style="display: flex; gap: 10px; justify-content: center;">
+                <button class="btn btn-outline" onclick="closeDeleteModal()">Batal</button>
+                <button class="btn btn-danger" id="confirmDeleteBtn">Ya, Hapus Buku</button>
+            </div>
+        </div>
+    </div>
+
+    <?php if ($flash_message): ?>
+    <!-- TOAST NOTIFICATION -->
+    <div id="toast" class="toast">
+        <span style="margin-right: 12px; font-size: 1.2rem;">✅</span> <?php echo $flash_message; ?>
+    </div>
+    <?php endif; ?>
 
     <script>
         // Variabel global untuk paginasi
         const currentPage = <?php echo $current_page; ?>;
         let daftarBuku = <?php echo json_encode($books); ?>;
-
-        function gantiHalaman(id) {
-            document.querySelectorAll('section').forEach(s => s.classList.add('hidden'));
-            document.getElementById(id).classList.remove('hidden');
-        }
-
-        function renderTabel() {
-            const tbody = document.getElementById('isiTabel');
-            tbody.innerHTML = daftarBuku.map((b, i) => `
-                <tr>
-                    <td data-label="No">${i+1}</td>
-                    <td data-label="Judul Buku"><span class="book-link" onclick="tampilkanDetail('${b.id}')">${b.judul}</span></td>
-                    <td data-label="Penulis">${b.penulis}</td>
-                    <td data-label="Tahun">${b.tahun}</td>
-                    <td data-label="Penerbit"><span class="badge">${b.penerbit}</span></td>
-                    <td data-label="Aksi" style="text-align:center;">
-                        <button class="btn-icon" onclick="bukaForm('${b.id}')">✎</button>
-                        <button class="btn-icon" onclick="hapusBuku('${b.id}')">🗑</button>
-                    </td>
-                </tr>
-            `).join('');
-        }
-
-        function tampilkanDetail(id) {
-            const b = daftarBuku.find(x => x.id === id);
-            document.getElementById('kontenDetail').innerHTML = `
-                <div class="detail-card">
-                    <div class="cover-area"><img src="${b.cover}" onerror="this.src='https://via.placeholder.com/300x450?text=No+Cover'"></div>
-                    <div class="info-area">
-                        <span class="meta-label">Judul</span><h2>${b.judul}</h2>
-                        <div class="meta-grid">
-                            <div><span class="meta-label">Penulis</span><div class="meta-value">${b.penulis}</div></div>
-                            <div><span class="meta-label">Tahun</span><div class="meta-value">${b.tahun}</div></div>
-                            <div><span class="meta-label">Penerbit</span><div class="meta-value">${b.penerbit}</div></div>
-                        </div>
-                        <div style="margin-top:20px;"><span class="meta-label">Sinopsis</span><p>${b.deskripsi}</p></div>
-                    </div>
-                </div>
-            `;
-            gantiHalaman('view-detail');
-        }
-
-        function bukaForm(id = null) {
-            const b = daftarBuku.find(x => x.id === id);
-            const coverPreview = document.getElementById('cover_preview');
-
-            document.getElementById('formTitle').innerText = id ? "Edit Koleksi" : "Tambah Koleksi";
-            document.getElementById('editId').value = id || "";
-            document.getElementById('f_judul').value = b ? b.judul : "";
-            document.getElementById('f_penulis').value = b ? b.penulis : "";
-            document.getElementById('f_tahun').value = b ? b.tahun : "";
-            document.getElementById('f_penerbit').value = b ? b.penerbit : "";
-
-            // Handle cover preview dan path lama
-            document.getElementById('f_cover_lama').value = b ? b.cover : "";
-            const coverUrlInput = document.getElementById('f_cover_url');
-
-            if (b && b.cover) { // Jika ada data cover
-                coverPreview.src = b.cover;
-                coverPreview.style.display = 'block';
-                // Cek apakah cover adalah URL, jika ya, isikan ke input URL
-                if (b.cover.startsWith('http')) {
-                    coverUrlInput.value = b.cover;
-                } else {
-                    coverUrlInput.value = "";
-                }
-            } else {
-                coverPreview.style.display = 'none';
-                coverUrlInput.value = "";
-            }
-            document.getElementById('f_cover').value = ""; // Reset input file
-
-            document.getElementById('f_deskripsi').value = b ? b.deskripsi : "";
-            gantiHalaman('view-form');
-        }
-
-        // Validasi input file di sisi klien (browser) & Live Preview
-        document.getElementById('f_cover').addEventListener('change', function() {
-            const file = this.files[0];
-            if (file) {
-                if (file.size > 2 * 1024 * 1024) { // 2MB
-                    alert('Ukuran file maksimal 2MB!');
-                    this.value = ""; // Reset input form
-                    return;
-                }
-                const allowedTypes = ['image/jpeg', 'image/png'];
-                if (!allowedTypes.includes(file.type)) {
-                    alert('Format file hanya boleh JPG atau PNG!');
-                    this.value = ""; // Reset input form
-                    return;
-                }
-                
-                // Menampilkan preview gambar yang baru dipilih secara live
-                const reader = new FileReader();
-                reader.onload = function(e) {
-                    const preview = document.getElementById('cover_preview');
-                    preview.src = e.target.result;
-                    preview.style.display = 'block';
-                }
-                reader.readAsDataURL(file);
-            }
-        });
-
-        // Live preview saat pengguna mengetik di input URL
-        document.getElementById('f_cover_url').addEventListener('input', function() {
-            const url = this.value;
-            const preview = document.getElementById('cover_preview');
-            if (url) {
-                preview.src = url;
-                preview.style.display = 'block';
-            } else if (!document.getElementById('f_cover').files[0]) {
-                // Sembunyikan preview hanya jika input file juga kosong
-                preview.style.display = 'none';
-            }
-        });
-
-        function hapusBuku(id) {
-            if(confirm("Hapus buku?")) window.location.href = "index.php?hapus=" + id;
-        }
-
-        renderTabel();
     </script>
+    <script src="script.js"></script>
 </body>
 </html>
