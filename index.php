@@ -79,7 +79,20 @@ if (isset($_POST['proses_simpan'])) {
 }
 
 // 3. Ambil data
-$query = mysqli_query($conn, "SELECT * FROM databuku ORDER BY kode_buku DESC");
+// Logika Paginasi
+$items_per_page = 10;
+$current_page = isset($_GET['page']) ? (int)$_GET['page'] : 1;
+if ($current_page < 1) $current_page = 1;
+
+$offset = ($current_page - 1) * $items_per_page;
+
+// Hitung total buku untuk paginasi
+$total_books_query = mysqli_query($conn, "SELECT COUNT(*) AS total FROM databuku");
+$total_books_row = mysqli_fetch_assoc($total_books_query);
+$total_books = $total_books_row['total'];
+$total_pages = ceil($total_books / $items_per_page);
+
+$query = mysqli_query($conn, "SELECT * FROM databuku ORDER BY kode_buku DESC LIMIT $items_per_page OFFSET $offset");
 $books = [];
 while ($row = mysqli_fetch_assoc($query)) {
     $books[] = [
@@ -204,6 +217,39 @@ while ($row = mysqli_fetch_assoc($query)) {
             .form-grid { grid-template-columns: 1fr; }
             .full-width { grid-column: span 1; }
             .form-actions { flex-direction: column; }
+
+            /* Paginasi Responsif */
+            .pagination { flex-wrap: wrap; justify-content: center; }
+            .pagination a, .pagination span {
+                padding: 8px 12px;
+                margin: 5px;
+            }
+        }
+
+        /* Paginasi */
+        .pagination {
+            display: flex;
+            justify-content: center;
+            margin-top: 30px;
+            gap: 5px;
+        }
+        .pagination a, .pagination span {
+            padding: 10px 15px;
+            border-radius: 8px;
+            text-decoration: none;
+            color: var(--text-main);
+            background-color: var(--bg-card);
+            border: 1px solid var(--border);
+            transition: var(--transition);
+        }
+        .pagination a:hover {
+            background-color: var(--primary);
+            color: #fff;
+        }
+        .pagination .current-page {
+            background-color: var(--primary);
+            color: #fff;
+            font-weight: bold;
         }
     </style>
 </head>
@@ -243,6 +289,26 @@ while ($row = mysqli_fetch_assoc($query)) {
             <div class="action-footer" style="margin-top:20px; text-align:center;">
                 <button class="btn btn-primary" onclick="bukaForm()">+ Tambah Koleksi Baru</button>
             </div>
+
+            <!-- Paginasi -->
+            <div class="pagination">
+                <?php if ($current_page > 1): ?>
+                    <a href="?page=<?php echo $current_page - 1; ?>">Previous</a>
+                <?php endif; ?>
+
+                <?php for ($i = 1; $i <= $total_pages; $i++): ?>
+                    <?php if ($i == $current_page): ?>
+                        <span class="current-page"><?php echo $i; ?></span>
+                    <?php else: ?>
+                        <a href="?page=<?php echo $i; ?>"><?php echo $i; ?></a>
+                    <?php endif; ?>
+                <?php endfor; ?>
+
+                <?php if ($current_page < $total_pages): ?>
+                    <a href="?page=<?php echo $current_page + 1; ?>">Next</a>
+                <?php endif; ?>
+            </div>
+
         </section>
 
         <!-- HALAMAN DETAIL -->
@@ -309,6 +375,8 @@ while ($row = mysqli_fetch_assoc($query)) {
     </footer>
 
     <script>
+        // Variabel global untuk paginasi
+        const currentPage = <?php echo $current_page; ?>;
         let daftarBuku = <?php echo json_encode($books); ?>;
 
         function gantiHalaman(id) {
