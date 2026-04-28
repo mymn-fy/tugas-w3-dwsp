@@ -11,7 +11,7 @@ function renderTabel() {
         tbody.innerHTML = `
             <tr>
                 <td colspan="6" class="empty-state-cell">
-                    <div class="empty-icon">📚</div>
+                    <div class="empty-icon"><span class="material-symbols-outlined" style="font-size: inherit;">library_books</span></div>
                     <h3 class="empty-title">Tidak Ada Data Ditemukan</h3>
                     <p class="empty-desc">Belum ada koleksi buku di sini atau kata kunci pencarian Anda tidak cocok.</p>
                 </td>
@@ -28,8 +28,8 @@ function renderTabel() {
             <td data-label="Tahun">${b.tahun}</td>
             <td data-label="Penerbit"><span class="badge">${b.penerbit}</span></td>
             <td data-label="Aksi" style="text-align:center;">
-                <button class="btn-icon" onclick="bukaForm('${b.id}')">✎</button>
-                <button class="btn-icon" onclick="hapusBuku('${b.id}')">🗑</button>
+                <button class="btn-icon" title="Edit" onclick="bukaForm('${b.id}')"><span class="material-symbols-outlined" style="font-size: 1.1rem;">edit</span></button>
+                <button class="btn-icon" title="Hapus" onclick="hapusBuku('${b.id}')"><span class="material-symbols-outlined" style="font-size: 1.1rem;">delete</span></button>
             </td>
         </tr>
     `).join('');
@@ -160,7 +160,7 @@ const themeToggleBtn = document.getElementById('themeToggle');
 const themeIcon = document.getElementById('themeIcon');
 
 function updateThemeIcon(theme) {
-    if(themeIcon) themeIcon.innerText = theme === 'light' ? '🌙' : '☀️';
+    if(themeIcon) themeIcon.innerText = theme === 'light' ? 'dark_mode' : 'light_mode';
 }
 
 // Inisialisasi ikon saat pertama kali dimuat

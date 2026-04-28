@@ -7,6 +7,7 @@ error_reporting(E_ALL);
 
 // --- LOGIKA LOGIN & LOGOUT ---
 if (isset($_GET['logout'])) {
+    session_unset();
     session_destroy();
     header("Location: index.php");
     exit;
@@ -34,6 +35,7 @@ if (!isset($_SESSION['is_logged_in']) || $_SESSION['is_logged_in'] !== true) {
     <title>Login Admin - Perpustakaan BSI</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="style.css?v=<?php echo time(); ?>">
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet" />
     <script>
         const savedTheme = localStorage.getItem('theme') || 'dark';
         document.documentElement.setAttribute('data-theme', savedTheme);
@@ -236,6 +238,7 @@ while ($row = mysqli_fetch_assoc($query)) {
     <title>Sistem Informasi Perpustakaan BSI</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="style.css?v=<?php echo time(); ?>">
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet" />
     <script>
         const savedTheme = localStorage.getItem('theme') || 'dark';
         document.documentElement.setAttribute('data-theme', savedTheme);
@@ -243,19 +246,26 @@ while ($row = mysqli_fetch_assoc($query)) {
 </head>
 <body>
 
-    <div class="container">
-        <header style="display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; text-align: left; gap: 15px;">
-            <div>
+    <!-- NAVBAR ELEGAN -->
+    <nav class="navbar">
+        <div class="navbar-inner">
+            <div class="navbar-brand">
                 <h1>Sistem Perpustakaan BSI</h1>
-                <p style="margin-top: 8px; margin-bottom: 0;">Katalog Digital Literasi BSI</p>
+                <p>Katalog Digital Literasi BSI</p>
             </div>
-            <div style="display: flex; gap: 10px; align-items: center;">
-                <button id="themeToggle" class="btn btn-outline" style="padding: 10px; border-radius: 50%; width: 42px; height: 42px;" title="Ganti Mode">
-                    <span id="themeIcon">☀️</span>
+            <div class="navbar-actions">
+                <button id="themeToggle" class="btn btn-outline btn-icon-nav" title="Ganti Mode">
+                    <span id="themeIcon" class="material-symbols-outlined" style="font-size: 1.3rem;">light_mode</span>
                 </button>
-                <a href="#" class="btn btn-outline" style="text-decoration:none; color: var(--danger); border-color: rgba(239, 68, 68, 0.4);" onclick="konfirmasiLogout(event)">Keluar</a>
+                <a href="#" class="btn btn-outline btn-logout" onclick="konfirmasiLogout(event)" title="Keluar">
+                    <span class="material-symbols-outlined" style="font-size: 1.3rem; margin-right: 6px;">logout</span>
+                    <span class="logout-text">Keluar</span>
+                </a>
             </div>
-        </header>
+        </div>
+    </nav>
+
+    <div class="container" style="padding-top: 20px;">
 
         <!-- HALAMAN DAFTAR -->
         <section id="view-list" class="animate">
@@ -264,25 +274,25 @@ while ($row = mysqli_fetch_assoc($query)) {
             <div class="dashboard-card">
                 <div class="dashboard-header">
                     <h2 class="dashboard-title">Dashboard Statistik</h2>
-                    <a href="?export=csv" class="btn btn-primary" style="padding: 8px 15px; font-size: 0.85rem; border-radius: 8px;">📥 Export Excel (CSV)</a>
+                    <a href="?export=csv" class="btn btn-primary" style="padding: 8px 15px; font-size: 0.85rem; border-radius: 8px;"><span class="material-symbols-outlined" style="font-size: 1.1rem;">download</span> Export Excel (CSV)</a>
                 </div>
                 <div class="stats-grid">
                     <div class="stat-capsule">
-                        <div class="stat-icon">📚</div>
+                        <div class="stat-icon"><span class="material-symbols-outlined" style="font-size: 1.6rem;">library_books</span></div>
                         <div class="stat-info">
                             <div class="stat-title">Total Koleksi</div>
                             <div class="stat-value"><?php echo $total_books; ?> <span>Buku</span></div>
                         </div>
                     </div>
                     <div class="stat-capsule">
-                        <div class="stat-icon">✍️</div>
+                        <div class="stat-icon"><span class="material-symbols-outlined" style="font-size: 1.6rem;">group</span></div>
                         <div class="stat-info">
                             <div class="stat-title">Penulis Unik</div>
                             <div class="stat-value"><?php echo $total_authors; ?> <span>Orang</span></div>
                         </div>
                     </div>
                     <div class="stat-capsule">
-                        <div class="stat-icon">✨</div>
+                        <div class="stat-icon"><span class="material-symbols-outlined" style="font-size: 1.6rem;">auto_awesome</span></div>
                         <div class="stat-info">
                             <div class="stat-title">Tahun Terbaru</div>
                             <div class="stat-value"><?php echo $newest_year; ?></div>
@@ -437,7 +447,7 @@ while ($row = mysqli_fetch_assoc($query)) {
     <?php if ($flash_message): ?>
     <!-- TOAST NOTIFICATION -->
     <div id="toast" class="toast">
-        <span style="margin-right: 12px; font-size: 1.2rem;">✅</span> <?php echo $flash_message; ?>
+        <span class="material-symbols-outlined" style="margin-right: 10px; font-size: 1.5rem; color: var(--primary);">check_circle</span> <?php echo $flash_message; ?>
     </div>
     <?php endif; ?>
 
@@ -446,6 +456,6 @@ while ($row = mysqli_fetch_assoc($query)) {
         const currentPage = <?php echo $current_page; ?>;
         let daftarBuku = <?php echo json_encode($books); ?>;
     </script>
-    <script src="script.js"></script>
+    <script src="script.js?v=<?php echo time(); ?>"></script>
 </body>
 </html>
