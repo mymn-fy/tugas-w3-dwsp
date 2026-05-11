@@ -135,15 +135,6 @@ function hapusBuku(id) {
     document.getElementById('deleteModal').classList.add('active');
 }
 
-function konfirmasiLogout(e) {
-    if (e) e.preventDefault(); // Mencegah browser berpindah ke href="#"
-    document.getElementById('logoutModal').classList.add('active');
-}
-
-function closeLogoutModal() {
-    document.getElementById('logoutModal').classList.remove('active');
-}
-
 function closeDeleteModal() {
     bookIdToDelete = null;
     document.getElementById('deleteModal').classList.remove('active');

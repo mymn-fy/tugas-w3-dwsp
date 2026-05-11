@@ -5,74 +5,6 @@ session_start();
 ini_set('display_errors', 1);
 error_reporting(E_ALL);
 
-// --- LOGIKA LOGIN & LOGOUT ---
-if (isset($_GET['logout'])) {
-    session_unset();
-    session_destroy();
-    header("Location: index.php");
-    exit;
-}
-
-$login_error = '';
-if (isset($_POST['proses_login'])) {
-    if ($_POST['username'] === 'perpusbsi' && $_POST['password'] === 'admin100') {
-        $_SESSION['is_logged_in'] = true;
-        header("Location: index.php");
-        exit;
-    } else {
-        $login_error = "Username atau password salah!";
-    }
-}
-
-// Jika belum login, tampilkan halaman login saja dan hentikan skrip
-if (!isset($_SESSION['is_logged_in']) || $_SESSION['is_logged_in'] !== true) {
-?>
-<!DOCTYPE html>
-<html lang="id">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Login Admin - Perpustakaan BSI</title>
-    <link rel="icon" href="assets/globe_book.svg" type="image/svg+xml">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="style.css?v=<?php echo time(); ?>">
-    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet" />
-    <script>
-        const savedTheme = localStorage.getItem('theme') || 'dark';
-        document.documentElement.setAttribute('data-theme', savedTheme);
-    </script>
-    <style>
-        .login-wrapper { max-width: 400px; margin: 10vh auto; }
-        .error-alert { background: rgba(239,68,68,0.1); color: var(--danger); padding: 12px; border-radius: 8px; margin-bottom: 20px; text-align: center; font-size: 0.9rem; border: 1px solid rgba(239,68,68,0.2); }
-    </style>
-</head>
-<body>
-    <div class="container login-wrapper animate">
-        <header>
-            <h1 style="font-size: 1.8rem;">Sistem Perpustakaan</h1>
-            <p>Silakan masuk untuk mengelola data</p>
-        </header>
-        <div class="form-card">
-            <?php if ($login_error) echo "<div class='error-alert'>$login_error</div>"; ?>
-            <form method="POST" action="index.php">
-                <div class="form-group" style="margin-bottom: 15px;">
-                    <label>Username</label>
-                    <input type="text" name="username" required autofocus autocomplete="off">
-                </div>
-                <div class="form-group" style="margin-bottom: 25px;">
-                    <label>Password</label>
-                    <input type="password" name="password" required>
-                </div>
-                <button type="submit" name="proses_login" class="btn btn-primary" style="width: 100%;">Masuk ke Dasbor</button>
-            </form>
-        </div>
-    </div>
-</body>
-</html>
-<?php
-    exit; // Menghentikan loading HTML & Database utama jika belum login
-}
-
 include 'koneksi.php';
 
 // 1. Logika HAPUS data
@@ -259,10 +191,6 @@ while ($row = mysqli_fetch_assoc($query)) {
                 <button id="themeToggle" class="btn btn-outline btn-icon-nav" title="Ganti Mode">
                     <span id="themeIcon" class="material-symbols-outlined" style="font-size: 1.3rem;">light_mode</span>
                 </button>
-                <a href="#" class="btn btn-outline btn-logout" onclick="konfirmasiLogout(event)" title="Keluar">
-                    <span class="material-symbols-outlined" style="font-size: 1.3rem; margin-right: 6px;">logout</span>
-                    <span class="logout-text">Keluar</span>
-                </a>
             </div>
         </div>
     </nav>
@@ -430,18 +358,6 @@ while ($row = mysqli_fetch_assoc($query)) {
             <div style="display: flex; gap: 10px; justify-content: center;">
                 <button class="btn btn-outline" onclick="closeDeleteModal()">Batal</button>
                 <button class="btn btn-danger" id="confirmDeleteBtn">Ya, Hapus Buku</button>
-            </div>
-        </div>
-    </div>
-
-    <!-- MODAL KONFIRMASI KELUAR -->
-    <div class="modal-overlay" id="logoutModal">
-        <div class="modal-box">
-            <h3 style="margin: 0; color: var(--text-main);">Konfirmasi Keluar</h3>
-            <div class="modal-body">Apakah Anda yakin ingin mengakhiri sesi dan keluar dari sistem?</div>
-            <div style="display: flex; gap: 10px; justify-content: center;">
-                <button class="btn btn-outline" onclick="closeLogoutModal()">Batal</button>
-                <a href="?logout=true" class="btn btn-danger" style="text-decoration: none;">Ya, Keluar</a>
             </div>
         </div>
     </div>

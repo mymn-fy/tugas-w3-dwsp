@@ -23,8 +23,7 @@ Pada sistem _client-side_ (sisi pengguna), _browser_ di HP atau laptop Anda (sep
 
 ## ✨ Fitur Utama
 
-- 🔐 **Sistem Autentikasi:** Login Admin yang aman menggunakan PHP Sessions.
-- 📚 **Manajemen Katalog (CRUD):** Tambah, baca, perbarui, dan hapus data koleksi buku.
+- **Manajemen Katalog (CRUD):** Tambah, baca, perbarui, dan hapus data koleksi buku.
 - 🔍 **Pencarian & Filter Pintar:** Pencarian Server-Side dan fitur urutkan data (Terbaru, Terlama, A-Z).
 - 📄 **Paginasi Otomatis:** Membagi daftar buku menjadi beberapa halaman untuk efisiensi beban kerja.
 - 📊 **Dasbor Statistik:** Ringkasan jumlah koleksi, penulis unik, dan tahun terbit terbaru.
@@ -52,10 +51,3 @@ Jika Anda ingin menjalankan aplikasi ini di komputer Anda sendiri, ikuti langkah
 3. Buka phpMyAdmin atau program _database_ pilihan Anda (seperti HeidiSQL), lalu buat _database_ baru bernama `perpustakaan_bsi`.
 4. Impor tabel database (jika Anda memiliki file `.sql` _backup_, jalankan di database tersebut). Jika Anda menggunakan struktur standar, pastikan tabel `databuku` telah terbuat.
 5. Aplikasi sudah siap diakses lewat _browser_ di `http://localhost/tugas-w3-dwsp`. File `koneksi.php` sudah dirancang pintar untuk mendeteksi lingkungan lokal (menggunakan _user_ `root` dan _password_ kosong).
-
-### 🔑 Kredensial Akses Login
-
-Untuk mengakses Dasbor Admin di lingkungan lokal maupun _live_, gunakan kredensial berikut:
-
-- **Username:** `perpusbsi`
-- **Password:** `admin100`
